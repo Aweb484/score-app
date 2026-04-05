@@ -53,6 +53,7 @@
   .screen-container {
     width: 100%; height: 100%;
     position: relative; overflow: hidden;
+    max-width: 500px; margin: 0 auto;
   }
   .screen {
     position: absolute; top: 0; left: 0;
@@ -1268,6 +1269,8 @@
 // ===== 版本管理 =====
 const APP_VERSION = '1.3.0';
 const VERSION_KEY = 'app_html_version';
+// HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
+// HTML_VERSION_CHECK:1.3.0
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -1379,20 +1382,104 @@ const DEFAULT_USERS = [
   {id:100,name:'管理员',role:'admin',pwd:'16652015021',account:'16652015021'},
 ];
 
-// 从 localStorage 加载用户数据，如果没有则用默认数据
+// ===== GitHub 云端数据同步 =====
+const CLOUD_CONFIG = {
+  repo: 'Aweb484/score-app-data',
+  token: 'TOKEN_REMOVED',
+  file: 'data.json',
+  apiBase: 'https://api.github.com/repos/Aweb484/score-app-data/contents/data.json'
+};
+let cloudDataSha = null; // 用于更新时指定版本
+let cloudSyncing = false;
+let cloudDirty = false; // 数据是否有未保存的修改
+let cloudSyncTimer = null;
+
+// 从云端加载数据
+async function cloudLoad() {
+  try {
+    const resp = await fetch(CLOUD_CONFIG.apiBase, {
+      headers: { 'Authorization': 'token ' + CLOUD_CONFIG.token }
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    cloudDataSha = data.sha;
+    const content = JSON.parse(atob(data.content));
+    return content;
+  } catch(e) {
+    console.warn('云端加载失败，使用本地缓存:', e);
+    return null;
+  }
+}
+
+// 保存数据到云端
+async function cloudSave() {
+  if (cloudSyncing) return;
+  cloudSyncing = true;
+  try {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify({
+      users: USERS, records: records, nextId: nextId, version: 1
+    }))));
+    const body = {
+      message: '数据更新 - ' + new Date().toLocaleString('zh-CN'),
+      content: content
+    };
+    if (cloudDataSha) body.sha = cloudDataSha;
+    const resp = await fetch(CLOUD_CONFIG.apiBase, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + CLOUD_CONFIG.token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) {
+      const err = await resp.json();
+      // SHA 冲突，重新拉取再保存
+      if (resp.status === 409 && err.message && err.message.includes('409')) {
+        await cloudLoad();
+        cloudDataSha = null;
+        return cloudSave();
+      }
+      throw new Error('HTTP ' + resp.status);
+    }
+    const result = await resp.json();
+    cloudDataSha = result.content.sha;
+    cloudDirty = false;
+    // 同步更新本地缓存
+    localStorage.setItem('app_users', JSON.stringify(USERS));
+    localStorage.setItem('app_records', JSON.stringify(records));
+    localStorage.setItem('app_nextId', nextId);
+  } catch(e) {
+    console.warn('云端保存失败:', e);
+    // 保存到本地缓存
+    localStorage.setItem('app_users', JSON.stringify(USERS));
+    localStorage.setItem('app_records', JSON.stringify(records));
+    localStorage.setItem('app_nextId', nextId);
+  } finally {
+    cloudSyncing = false;
+  }
+}
+
+// 延迟保存（防抖，3秒内多次修改只保存一次）
+function cloudSaveDebounced() {
+  cloudDirty = true;
+  if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(() => cloudSave(), 3000);
+}
+
+// 从 localStorage 加载用户数据（离线回退）
 function loadUsers() {
   const saved = localStorage.getItem('app_users');
-  const version = localStorage.getItem('app_users_version');
-  if (saved && version === '3') {
+  if (saved) {
     try { return JSON.parse(saved); } catch(e) {}
   }
-  // 版本不匹配或无数据，用默认数据并保存
-  localStorage.setItem('app_users_version', '3');
-  localStorage.removeItem('app_users'); // 清除旧数据
   return JSON.parse(JSON.stringify(DEFAULT_USERS));
 }
+
+// 保存用户（触发云端同步）
 function saveUsers() {
   localStorage.setItem('app_users', JSON.stringify(USERS));
+  cloudSaveDebounced();
 }
 
 // 角色判断辅助函数
@@ -1939,6 +2026,7 @@ function submitScoreMulti() {
 
     hideLoading();
     showToast(`✅ 成功提交 ${selectedTaskIds.size} 项作业申报`);
+    cloudSaveDebounced();
     // Reset
     selectedTaskIds.clear();
     openModules.clear();
@@ -1991,12 +2079,12 @@ function switchApprovalTab(idx, el) {
 
 function approveRecord(id) {
   const r = records.find(r => r.id === id);
-  if (r) { r.status = 'approved'; renderApproval(); showToast('✅ 已通过'); }
+  if (r) { r.status = 'approved'; renderApproval(); showToast('✅ 已通过'); cloudSaveDebounced(); }
 }
 
 function rejectRecord(id) {
   const r = records.find(r => r.id === id);
-  if (r) { r.status = 'rejected'; r.rejectReason = '不符合要求'; renderApproval(); showToast('❌ 已驳回'); }
+  if (r) { r.status = 'rejected'; r.rejectReason = '不符合要求'; renderApproval(); showToast('❌ 已驳回'); cloudSaveDebounced(); }
 }
 
 // 查看照片大图
@@ -2289,6 +2377,7 @@ function quickApprove(id) {
   r.status = 'approved';
   showToast(`✅ 已通过「${r.userName}」的申报`);
   renderAllRecords();
+  cloudSaveDebounced();
 }
 
 // ===== PROFILE =====
@@ -2959,10 +3048,56 @@ function addListAnimation(container) {
 }
 
 // ===== INIT =====
-initRecords();
 initSubmit();
 loadSavedLogin();
 checkVersionUpdate();
+
+// 从云端加载数据（异步）
+(async function initCloud() {
+  showLoading('正在同步数据...');
+  const cloudData = await cloudLoad();
+  if (cloudData) {
+    // 合并云端数据
+    if (cloudData.users && cloudData.users.length > 0) {
+      USERS.length = 0;
+      cloudData.users.forEach(u => USERS.push(u));
+      localStorage.setItem('app_users', JSON.stringify(USERS));
+    }
+    if (cloudData.records) {
+      records.length = 0;
+      cloudData.records.forEach(r => {
+        // 还原日期对象
+        if (typeof r.date === 'string') r.date = new Date(r.date);
+        if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+        records.push(r);
+      });
+      localStorage.setItem('app_records', JSON.stringify(records));
+    }
+    if (cloudData.nextId) {
+      nextId = cloudData.nextId;
+      localStorage.setItem('app_nextId', nextId);
+    }
+  } else {
+    // 离线模式：从本地缓存加载
+    const savedRecords = localStorage.getItem('app_records');
+    if (savedRecords) {
+      try {
+        const parsed = JSON.parse(savedRecords);
+        records.length = 0;
+        parsed.forEach(r => {
+          if (typeof r.date === 'string') r.date = new Date(r.date);
+          if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+          records.push(r);
+        });
+      } catch(e) {}
+    }
+    const savedNextId = localStorage.getItem('app_nextId');
+    if (savedNextId) nextId = parseInt(savedNextId);
+    // 本地没有记录时，初始化演示数据
+    if (records.length === 0) initRecords();
+  }
+  hideLoading();
+})();
 
 // 延迟初始化交互效果
 setTimeout(() => {
