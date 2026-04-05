@@ -758,7 +758,7 @@
       <div class="login-card">
         <div class="login-input-wrap">
           <span class="login-input-icon">👤</span>
-          <input class="login-input" id="login-name" placeholder="请输入账号" value="" inputmode="numeric">
+          <input class="login-input" id="login-name" placeholder="请输入账号" value="">
         </div>
         <div class="login-input-wrap" id="login-pwd-wrap">
           <span class="login-input-icon">🔒</span>
@@ -782,7 +782,7 @@
             <div class="home-greeting" id="home-greeting">你好，管理员</div>
             <div class="home-date" id="home-date"></div>
           </div>
-          <div class="home-badge" onclick="navigateTo('approval')">🔔 待审批 <span id="pending-count">3</span></div>
+          <div class="home-badge" id="home-approval-badge" onclick="navigateTo('approval')">🔔 待审批 <span id="pending-count">3</span></div>
         </div>
       </div>
       <div class="score-cards">
@@ -1409,6 +1409,7 @@ let nextId = 100;
 let taskCount = 1;
 let photoUploaded = false;
 let photoFileName = '';
+let photoBase64 = ''; // 存储照片 base64 数据
 let selectedModule = '全部';
 let currentTab = 0;
 let statYear = 2026, statMonth = 4;
@@ -1647,8 +1648,12 @@ function renderHome() {
   document.getElementById('home-date').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${days[now.getDay()]}`;
 
   const pending = records.filter(r => r.status === 'pending');
+  const canApprove = isAdminRole(currentUser.role);
   document.getElementById('pending-count').textContent = pending.length;
   document.getElementById('home-pending').textContent = pending.length;
+  // 普通员工隐藏审批徽章和待审批卡片
+  document.getElementById('home-approval-badge').style.display = canApprove ? '' : 'none';
+  document.getElementById('home-pending').closest('.score-card').style.display = canApprove ? '' : 'none';
 
   // Month score - 按当前月份过滤
   const curMonth = now.getFullYear() + '-' + now.getMonth();
@@ -1858,10 +1863,16 @@ function uploadPhoto() {
     if (!file) { document.body.removeChild(input); return; }
     photoUploaded = true;
     photoFileName = file.name;
-    const el = document.getElementById('photo-upload');
-    el.classList.add('photo-uploaded');
-    el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
-    showToast('📷 照片已选择：' + file.name);
+    // 将照片转为 base64 存储
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      photoBase64 = ev.target.result; // data:image/jpeg;base64,...
+      const el = document.getElementById('photo-upload');
+      el.classList.add('photo-uploaded');
+      el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
+      showToast('📷 照片已选择：' + file.name);
+    };
+    reader.readAsDataURL(file);
     document.body.removeChild(input);
   };
 
@@ -1882,10 +1893,15 @@ function uploadPhoto() {
         if (!file) { document.body.removeChild(input2); return; }
         photoUploaded = true;
         photoFileName = file.name;
-        const el = document.getElementById('photo-upload');
-        el.classList.add('photo-uploaded');
-        el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
-        showToast('📷 照片已选择：' + file.name);
+        const reader2 = new FileReader();
+        reader2.onload = (ev) => {
+          photoBase64 = ev.target.result;
+          const el = document.getElementById('photo-upload');
+          el.classList.add('photo-uploaded');
+          el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
+          showToast('📷 照片已选择：' + file.name);
+        };
+        reader2.readAsDataURL(file);
         document.body.removeChild(input2);
       };
       try { input2.click(); } catch(e2) {
@@ -1915,7 +1931,8 @@ function submitScoreMulti() {
           id: nextId++, userId: currentUser.id, userName: currentUser.name,
           taskId: task.id, taskName: task.content,
           date: new Date(dateStr), count: 1, score: task.score,
-          status: 'pending', createdAt: new Date()
+          status: 'pending', createdAt: new Date(),
+          photo: photoBase64 || null, photoName: photoFileName || ''
         });
       }
     });
@@ -1928,6 +1945,7 @@ function submitScoreMulti() {
     openCategories.clear();
     photoUploaded = false;
     photoFileName = '';
+    photoBase64 = '';
     const el = document.getElementById('photo-upload');
     el.classList.remove('photo-uploaded');
     el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">📷</span><span class="photo-upload-text" style="font-size:11px;">拍照上传</span>';
@@ -1949,6 +1967,7 @@ function renderApproval() {
         <div class="approval-header"><span class="approval-name">${r.userName}</span><span class="record-status status-pending">待审批</span></div>
         <div class="approval-task">${r.taskName}</div>
         <div class="approval-meta">${r.date.getMonth()+1}/${r.date.getDate()}  ·  ${r.count}次  ·  <span class="approval-score">+${r.score}分</span></div>
+        ${r.photo ? `<div style="margin:8px 0 4px;"><img src="${r.photo}" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:cover;cursor:pointer;" onclick="viewPhoto('${r.id}')"></div>` : ''}
         <div class="approval-actions">
           <button class="approval-btn btn-approve" onclick="approveRecord(${r.id})">✅ 通过</button>
           <button class="approval-btn btn-reject" onclick="rejectRecord(${r.id})">❌ 驳回</button>
@@ -1978,6 +1997,23 @@ function approveRecord(id) {
 function rejectRecord(id) {
   const r = records.find(r => r.id === id);
   if (r) { r.status = 'rejected'; r.rejectReason = '不符合要求'; renderApproval(); showToast('❌ 已驳回'); }
+}
+
+// 查看照片大图
+function viewPhoto(recordId) {
+  const r = records.find(x => x.id === parseInt(recordId));
+  if (!r || !r.photo) return;
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('modal-sheet').classList.add('show');
+  document.getElementById('modal-sheet').innerHTML = `
+    <div class="modal-handle"></div>
+    <div style="padding:10px 20px 24px;">
+      <div class="modal-title" style="margin-bottom:12px;">📷 佐证照片</div>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:10px;">${r.userName} · ${r.taskName} · ${r.date.getMonth()+1}/${r.date.getDate()}</p>
+      <img src="${r.photo}" style="width:100%;border-radius:12px;" />
+      <button onclick="closeModal()" style="width:100%;margin-top:16px;padding:12px;border-radius:12px;border:none;background:var(--light);color:var(--gray);font-size:14px;cursor:pointer;">关闭</button>
+    </div>
+  `;
 }
 
 // ===== STATISTICS =====
