@@ -1,0 +1,2848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>计件积分管理 APP 预览</title>
+<style>
+  :root {
+    --primary: #028090;
+    --secondary: #00A896;
+    --accent: #02C39A;
+    --dark: #1A3C40;
+    --light: #E0F7FA;
+    --bg: #F8FFFE;
+    --white: #FFFFFF;
+    --text: #1A3C40;
+    --gray: #78909C;
+    --lightGray: #ECEFF1;
+    --orange: #FF8F00;
+    --red: #E53935;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    background: #1A1A2E;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  /* Phone frame */
+  .phone-frame {
+    width: 390px; height: 844px;
+    background: var(--bg);
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 3px #333, 0 0 0 6px #1a1a1a, 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .phone-notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 160px; height: 34px; background: #1a1a1a;
+    border-radius: 0 0 20px 20px; z-index: 100;
+  }
+  .phone-notch::before {
+    content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 6px; background: #333; border-radius: 3px;
+  }
+  /* Screen container */
+  .screen-container {
+    width: 100%; height: 100%;
+    position: relative; overflow: hidden;
+  }
+  .screen {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg);
+  }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* ===== LOGIN SCREEN ===== */
+  .login-screen {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 30px;
+  }
+  .login-logo { font-size: 64px; margin-bottom: 16px; }
+  .login-title { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: 2px; }
+  .login-subtitle { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 6px; margin-bottom: 48px; }
+  .login-card {
+    background: rgba(255,255,255,0.97); border-radius: 20px;
+    padding: 28px 24px; width: 100%;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+  }
+  .login-input {
+    width: 100%; padding: 14px 16px 14px 44px;
+    border: 2px solid var(--light); border-radius: 12px;
+    font-size: 15px; outline: none; transition: border-color 0.2s;
+    background: #fff; color: var(--text);
+  }
+  .login-input:focus { border-color: var(--primary); }
+  .login-input-wrap { position: relative; margin-bottom: 16px; }
+  .login-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--primary); }
+  .login-btn {
+    width: 100%; padding: 15px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-top: 8px;
+  }
+  .login-btn:active { transform: scale(0.97); }
+  .login-hint { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 24px; cursor: pointer; text-decoration: underline; }
+
+  /* ===== HOME SCREEN ===== */
+  .home-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 56px 20px 24px; border-radius: 0 0 28px 28px;
+    color: #fff;
+  }
+  .home-greeting { font-size: 22px; font-weight: 700; }
+  .home-date { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+  .home-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.2); padding: 5px 12px;
+    border-radius: 20px; font-size: 12px; cursor: pointer;
+  }
+  .score-cards { display: flex; gap: 10px; padding: 16px 20px; margin-top: -20px; }
+  .score-card {
+    flex: 1; background: #fff; border-radius: 14px; padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .score-card-label { font-size: 11px; color: var(--gray); }
+  .score-card-value { font-size: 26px; font-weight: 800; margin-top: 2px; }
+  .score-card-unit { font-size: 11px; color: var(--gray); }
+  .section-title { font-size: 16px; font-weight: 700; color: var(--dark); padding: 0 20px; margin-bottom: 12px; }
+  .quick-actions { display: flex; gap: 0; padding: 0 20px; margin-bottom: 20px; }
+  .quick-action {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .quick-action-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; transition: transform 0.15s;
+  }
+  .quick-action-icon:active { transform: scale(0.9); }
+  .quick-action-label { font-size: 12px; color: var(--text); font-weight: 500; }
+  .record-item {
+    background: #fff; margin: 0 20px 8px; padding: 12px 14px;
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .record-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .record-date { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .record-score { font-size: 14px; font-weight: 700; color: var(--primary); }
+  .record-status {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    margin-left: 8px;
+  }
+  .status-approved { background: rgba(2,195,154,0.1); color: var(--accent); }
+  .status-pending { background: rgba(255,143,0,0.1); color: var(--orange); }
+  .status-rejected { background: rgba(229,57,53,0.1); color: var(--red); }
+  .ranking-item {
+    display: flex; align-items: center; padding: 5px 20px; gap: 10px;
+  }
+  .ranking-medal {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .ranking-name { flex: 1; font-size: 13px; color: var(--text); }
+  .ranking-score { font-size: 13px; font-weight: 700; color: var(--primary); }
+
+  /* ===== SUBMIT SCREEN ===== */
+  .app-bar {
+    background: var(--primary); color: #fff; padding: 50px 16px 14px;
+    display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10;
+  }
+  .app-bar-title { font-size: 17px; font-weight: 600; }
+  .app-bar-back { font-size: 22px; cursor: pointer; padding: 4px; }
+  .form-section { padding: 20px; }
+  .form-label { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 8px; }
+  .form-hint { font-size: 11px; color: var(--gray); margin-top: 4px; }
+  .form-select {
+    width: 100%; padding: 14px 16px; border: 2px solid var(--lightGray);
+    border-radius: 12px; background: #fff; font-size: 14px; color: var(--text);
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2378909C' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+  }
+  .form-select.active { border-color: var(--primary); }
+  .form-input {
+    width: 100%; padding: 14px 16px; border: 2px solid var(--lightGray);
+    border-radius: 12px; font-size: 14px; color: var(--text); background: #fff;
+  }
+  .count-row { display: flex; align-items: center; gap: 12px; }
+  .count-btn {
+    width: 44px; height: 44px; border: 2px solid var(--lightGray); border-radius: 10px;
+    background: #f5f5f5; font-size: 20px; color: var(--primary); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .count-btn:active { background: var(--light); }
+  .count-display {
+    width: 80px; height: 44px; border: 2px solid var(--lightGray); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: var(--text);
+  }
+  .score-preview {
+    background: var(--light); border-radius: 12px; padding: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .score-preview-value { font-size: 24px; font-weight: 800; color: var(--primary); }
+  .photo-upload {
+    width: 100px; height: 100px; border: 2px dashed var(--lightGray);
+    border-radius: 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .photo-upload:active { background: var(--light); border-color: var(--primary); }
+  .photo-upload-icon { font-size: 28px; color: #BDBDBD; }
+  .photo-upload-text { font-size: 11px; color: #BDBDBD; }
+  .photo-uploaded { border-style: solid; border-color: var(--accent); background: rgba(2,195,154,0.05); }
+  .photo-uploaded .photo-upload-icon { color: var(--accent); }
+  .photo-uploaded .photo-upload-text { color: var(--accent); }
+  .submit-btn {
+    width: 100%; padding: 15px; border: none; border-radius: 12px;
+    background: var(--primary); color: #fff; font-size: 16px;
+    font-weight: 700; cursor: pointer; margin-top: 24px;
+    transition: opacity 0.2s;
+  }
+  .submit-btn:active { opacity: 0.85; }
+  .submit-btn:disabled { background: var(--lightGray); color: #fff; }
+
+  /* ===== MULTI-SELECT MODULE STYLE ===== */
+  .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .module-card {
+    background: #fff; border: 2px solid var(--lightGray); border-radius: 12px;
+    padding: 14px 10px; text-align: center; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+  .module-card:active { transform: scale(0.96); }
+  .module-card.selected { border-color: var(--primary); background: var(--light); }
+  .module-card-icon { font-size: 26px; margin-bottom: 4px; }
+  .module-card-name { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .module-card-count { font-size: 10px; color: var(--gray); margin-top: 2px; }
+  .module-card-check {
+    position: absolute; top: 6px; right: 6px; width: 20px; height: 20px;
+    border-radius: 50%; background: var(--primary); color: #fff;
+    font-size: 12px; display: none; align-items: center; justify-content: center;
+  }
+  .module-card.selected .module-card-check { display: flex; }
+
+  .category-section { margin-bottom: 14px; }
+  .category-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: #fff; border-radius: 10px;
+    cursor: pointer; margin-bottom: 6px;
+  }
+  .category-header:active { background: var(--light); }
+  .category-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .category-count { font-size: 11px; color: var(--gray); margin-left: 6px; }
+  .category-arrow { font-size: 14px; color: var(--gray); transition: transform 0.2s; }
+  .category-arrow.open { transform: rotate(90deg); }
+
+  .task-check-list { padding-left: 8px; display: none; }
+  .task-check-list.open { display: block; }
+
+  .task-check-item {
+    display: flex; align-items: center; padding: 9px 12px; gap: 10px;
+    border-radius: 8px; cursor: pointer; margin-bottom: 2px;
+  }
+  .task-check-item:active { background: var(--light); }
+  .task-checkbox {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 2px solid var(--lightGray); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-size: 12px; color: transparent;
+  }
+  .task-check-item.checked .task-checkbox {
+    background: var(--primary); border-color: var(--primary); color: #fff;
+  }
+  .task-check-info { flex: 1; }
+  .task-check-name { font-size: 12px; color: var(--text); line-height: 1.3; }
+  .task-check-score {
+    padding: 2px 8px; border-radius: 8px;
+    background: rgba(255,143,0,0.1); font-size: 11px;
+    font-weight: 700; color: var(--orange); flex-shrink: 0;
+  }
+  .task-check-item.checked .task-check-score {
+    background: var(--primary); color: #fff;
+  }
+
+  .selected-summary {
+    background: var(--light); border-radius: 12px; padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .selected-summary-title { font-size: 12px; color: var(--gray); margin-bottom: 6px; }
+  .selected-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .selected-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 8px;
+    background: var(--primary); color: #fff; font-size: 11px;
+  }
+  .selected-tag-remove { cursor: pointer; font-size: 14px; line-height: 1; }
+
+  .submit-bar {
+    position: sticky; bottom: 0; left: 0; right: 0;
+    background: #fff; padding: 12px 20px;
+    border-top: 1px solid var(--lightGray);
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 60;
+    margin-bottom: 80px;
+  }
+  .submit-bar-info { }
+  .submit-bar-count { font-size: 12px; color: var(--gray); }
+  .submit-bar-score { font-size: 20px; font-weight: 800; color: var(--primary); }
+  .submit-bar-btn {
+    padding: 12px 28px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-size: 14px;
+    font-weight: 700; cursor: pointer;
+  }
+  .submit-bar-btn:active { opacity: 0.85; }
+  .submit-bar-btn:disabled { background: var(--lightGray); }
+
+  /* ===== ADMIN PAGES COMMON ===== */
+  .admin-section { padding: 16px; }
+  .admin-card {
+    background: #fff; border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 10px; box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .admin-card:active { background: var(--bg); }
+  .admin-card-info { flex: 1; }
+  .admin-card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .admin-card-sub { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .admin-card-right { text-align: right; flex-shrink: 0; }
+  .admin-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 8px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-active { background: rgba(2,195,154,0.1); color: var(--accent); }
+  .badge-disabled { background: rgba(229,57,53,0.1); color: var(--red); }
+  .badge-score { background: rgba(255,143,0,0.1); color: var(--orange); }
+  .admin-action-btn {
+    padding: 6px 14px; border-radius: 8px; border: none;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .btn-edit { background: var(--light); color: var(--primary); }
+  .btn-danger { background: rgba(229,57,53,0.1); color: var(--red); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .admin-fab {
+    position: fixed; bottom: 100px; right: 20px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--primary); color: #fff; border: none;
+    font-size: 24px; cursor: pointer; box-shadow: 0 4px 16px rgba(2,128,144,0.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 55; transition: transform 0.15s;
+  }
+  .admin-fab:active { transform: scale(0.9); }
+  .admin-search {
+    margin: 0 16px 12px; padding: 10px 14px; background: #fff;
+    border-radius: 10px; border: 1px solid var(--lightGray);
+    font-size: 13px; color: var(--text); width: calc(100% - 32px); outline: none;
+  }
+  .admin-search:focus { border-color: var(--primary); }
+  .setting-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--lightGray);
+  }
+  .setting-label { font-size: 14px; color: var(--text); }
+  .setting-desc { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .toggle-switch {
+    width: 44px; height: 24px; border-radius: 12px;
+    background: var(--lightGray); cursor: pointer; position: relative;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--primary); }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; transition: left 0.2s;
+  }
+  .toggle-switch.on::after { left: 22px; }
+  .backup-card {
+    background: #fff; border-radius: 14px; padding: 20px;
+    margin: 16px; text-align: center; box-shadow: var(--shadow);
+  }
+  .backup-icon { font-size: 40px; margin-bottom: 8px; }
+  .backup-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .backup-desc { font-size: 12px; color: var(--gray); margin-top: 4px; }
+  .backup-btn {
+    margin-top: 14px; padding: 10px 24px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .export-table {
+    width: 100%; border-collapse: collapse; font-size: 11px;
+    margin-top: 12px;
+  }
+  .export-table th {
+    background: var(--primary); color: #fff; padding: 8px 6px;
+    text-align: left; font-weight: 600;
+  }
+  .export-table td {
+    padding: 7px 6px; border-bottom: 1px solid var(--lightGray);
+    color: var(--text);
+  }
+  .export-table tr:nth-child(even) td { background: var(--bg); }
+
+  /* ===== APPROVAL SCREEN ===== */
+  .tabs {
+    display: flex; background: #fff; border-bottom: 1px solid var(--lightGray);
+  }
+  .tab {
+    flex: 1; padding: 12px; text-align: center; font-size: 13px;
+    font-weight: 600; color: var(--gray); cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+  }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .approval-card {
+    background: #fff; margin: 12px 16px; padding: 16px;
+    border-radius: 12px; box-shadow: var(--shadow);
+  }
+  .approval-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .approval-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .approval-task { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .approval-meta { font-size: 11px; color: var(--gray); margin-bottom: 12px; }
+  .approval-score { font-size: 13px; font-weight: 700; color: var(--primary); }
+  .approval-actions { display: flex; gap: 12px; }
+  .approval-btn {
+    flex: 1; padding: 10px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-approve { background: var(--accent); color: #fff; }
+  .btn-reject { background: #fff; color: var(--gray); border: 1px solid var(--lightGray); }
+
+  /* ===== STATISTICS SCREEN ===== */
+  .period-selector {
+    background: var(--light); padding: 12px 20px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+  }
+  .period-arrow { font-size: 20px; color: var(--primary); cursor: pointer; padding: 4px 8px; }
+  .period-text { font-size: 16px; font-weight: 700; color: var(--dark); }
+  .stat-summary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    margin: 16px; padding: 20px; border-radius: 16px;
+    display: flex; justify-content: space-around;
+  }
+  .stat-item { text-align: center; color: #fff; }
+  .stat-item-value { font-size: 24px; font-weight: 800; }
+  .stat-item-label { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .chart-container {
+    background: #fff; margin: 0 16px 16px; padding: 16px;
+    border-radius: 12px; min-height: 200px;
+  }
+  .chart-title { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 12px; }
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-label { width: 50px; font-size: 11px; color: var(--text); text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 22px; background: var(--lightGray); border-radius: 11px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 11px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+  .bar-value { width: 40px; font-size: 11px; font-weight: 700; color: var(--primary); text-align: left; flex-shrink: 0; }
+
+  /* ===== QUERY SCREEN ===== */
+  .search-bar {
+    padding: 12px 16px; background: var(--light);
+  }
+  .search-input-wrap {
+    background: #fff; border-radius: 12px; padding: 0 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .search-input {
+    flex: 1; padding: 12px 0; border: none; outline: none;
+    font-size: 14px; color: var(--text); background: transparent;
+  }
+  .filter-chips {
+    display: flex; gap: 8px; padding: 10px 16px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 7px 14px; border-radius: 20px; font-size: 12px;
+    white-space: nowrap; cursor: pointer; border: 1px solid var(--lightGray);
+    background: #fff; color: var(--gray); transition: all 0.2s; flex-shrink: 0;
+  }
+  .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .standard-item {
+    display: flex; align-items: center; padding: 12px 16px; gap: 12px;
+  }
+  .standard-info { flex: 1; }
+  .standard-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .standard-meta { font-size: 10px; color: var(--gray); margin-top: 3px; }
+  .standard-score {
+    padding: 5px 12px; border-radius: 12px;
+    background: var(--orange); color: #fff;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .results-count { padding: 6px 16px; font-size: 12px; color: var(--gray); }
+
+  /* ===== PROFILE SCREEN ===== */
+  .profile-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 56px 20px 30px; text-align: center; color: #fff;
+    border-radius: 0 0 28px 28px;
+  }
+  .profile-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--accent); margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+  }
+  .profile-name { font-size: 20px; font-weight: 700; }
+  .profile-role {
+    display: inline-block; padding: 4px 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.2); font-size: 12px; margin-top: 8px;
+  }
+  .profile-stats {
+    display: flex; padding: 20px; gap: 0;
+  }
+  .profile-stat { flex: 1; text-align: center; }
+  .profile-stat-value { font-size: 22px; font-weight: 800; color: var(--primary); }
+  .profile-stat-label { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .menu-list { margin: 16px; background: #fff; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+  .menu-item {
+    display: flex; align-items: center; padding: 14px 16px; gap: 12px;
+    cursor: pointer; border-bottom: 1px solid var(--lightGray);
+  }
+  .menu-item:last-child { border-bottom: none; }
+  .menu-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--light); display: flex; align-items: center;
+    justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .menu-text { flex: 1; }
+  .menu-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .menu-subtitle { font-size: 11px; color: var(--gray); }
+  .menu-arrow { color: #BDBDBD; font-size: 18px; }
+  .logout-btn {
+    margin: 20px 16px; padding: 14px; border: 2px solid var(--red);
+    border-radius: 12px; background: transparent; color: var(--red);
+    font-size: 14px; font-weight: 700; cursor: pointer; width: calc(100% - 32px);
+  }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 80px; background: #fff;
+    display: flex; align-items: flex-start; padding-top: 8px;
+    border-top: 1px solid var(--lightGray); z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 2px; cursor: pointer; padding: 4px 0;
+  }
+  .nav-icon { font-size: 22px; color: var(--gray); transition: color 0.2s; }
+  .nav-label { font-size: 10px; color: var(--gray); transition: color 0.2s; }
+  .nav-item.active .nav-icon { color: var(--primary); }
+  .nav-item.active .nav-label { color: var(--primary); font-weight: 600; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: absolute; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px;
+    border-radius: 10px; font-size: 13px; z-index: 200;
+    opacity: 0; transition: all 0.3s; pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 150;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+  /* 通用弹窗 */
+  .popup-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 200;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .popup-overlay.show { opacity: 1; pointer-events: auto; }
+  .popup-box {
+    background: #fff; border-radius: 16px; padding: 24px 20px 20px;
+    width: 85%; max-width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+  .popup-title { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 12px; }
+  .popup-input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--lightGray); border-radius: 10px;
+    font-size: 14px; outline: none; box-sizing: border-box; margin-bottom: 10px;
+  }
+  .popup-input:focus { border-color: var(--primary); }
+  .popup-msg { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 16px; }
+  .popup-btns { display: flex; gap: 10px; margin-top: 16px; }
+  .popup-btns button {
+    flex: 1; padding: 11px 0; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none;
+  }
+  .popup-btn-cancel { background: var(--lightGray); color: var(--gray); }
+  .popup-btn-confirm { background: var(--primary); color: #fff; }
+  .popup-btn-danger { background: var(--red); color: #fff; }
+  .modal-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff; border-radius: 20px 20px 0 0;
+    max-height: 70%; z-index: 151;
+    transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column;
+    pointer-events: none;
+  }
+  .modal-sheet.show { transform: translateY(0); pointer-events: auto; }
+  .modal-handle { width: 40px; height: 4px; background: var(--lightGray); border-radius: 2px; margin: 12px auto; }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--dark); padding: 0 20px 12px; }
+  .modal-list { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+  .modal-item {
+    display: flex; align-items: center; padding: 12px 20px; gap: 12px;
+    cursor: pointer; border-bottom: 1px solid var(--lightGray);
+  }
+  .modal-item:active { background: var(--light); }
+  .modal-item-info { flex: 1; }
+  .modal-item-name { font-size: 13px; color: var(--text); }
+  .modal-item-cat { font-size: 10px; color: var(--gray); }
+
+  /* Animations */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeInUp 0.4s ease-out; }
+  .fade-in-delay-1 { animation: fadeInUp 0.4s ease-out 0.1s both; }
+  .fade-in-delay-2 { animation: fadeInUp 0.4s ease-out 0.2s both; }
+  .fade-in-delay-3 { animation: fadeInUp 0.4s ease-out 0.3s both; }
+
+  /* === 全链路交互优化 === */
+  /* 水波纹点击反馈 */
+  .ripple-container { position: relative; overflow: hidden; }
+  .ripple {
+    position: absolute; border-radius: 50%; background: rgba(2,128,144,0.15);
+    transform: scale(0); animation: rippleAnim 0.6s ease-out forwards; pointer-events: none;
+  }
+  @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+  /* 页面切换动效 */
+  .screen { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease; z-index: 1; }
+  .screen.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; visibility: hidden; z-index: 0; }
+  .screen.hidden-left { transform: translateX(-30%); opacity: 0.3; pointer-events: none; visibility: hidden; z-index: 0; }
+  .screen.slide-in-right { transform: translateX(0); opacity: 1; visibility: visible; z-index: 2; }
+  .screen.slide-in-left { transform: translateX(0); opacity: 1; visibility: visible; z-index: 2; }
+
+  /* 按钮点击缩放反馈 */
+  button, .menu-item, .quick-action, .chip, .nav-item, .admin-card, .record-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active, .menu-item:active, .quick-action:active {
+    transform: scale(0.96); opacity: 0.85;
+  }
+  .chip:active { transform: scale(0.95); }
+  .nav-item:active { transform: scale(0.9); }
+
+  /* 加载动画 */
+  .loading-spinner {
+    display: inline-block; width: 24px; height: 24px;
+    border: 3px solid var(--lightGray); border-top-color: var(--primary);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.85); z-index: 300;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .loading-overlay.show { opacity: 1; pointer-events: auto; }
+  .loading-text { margin-top: 12px; font-size: 13px; color: var(--gray); }
+
+  /* 骨架屏 */
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%; animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* Toast 优化 - 从顶部滑入 */
+  .toast {
+    position: absolute; top: 50px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: rgba(26,60,64,0.92); color: #fff; padding: 10px 20px;
+    border-radius: 20px; font-size: 13px; z-index: 500; white-space: nowrap;
+    opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none;
+    backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 列表项入场动画 */
+  .list-item-enter {
+    animation: listItemIn 0.3s ease-out both;
+  }
+  @keyframes listItemIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* 弹窗优化 */
+  .popup-overlay { transition: opacity 0.25s ease; }
+  .popup-box {
+    transform: scale(0.9) translateY(20px); opacity: 0; pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  }
+  .popup-overlay.show .popup-box { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+
+  /* 退出确认弹窗 */
+  .exit-confirm {
+    position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: rgba(26,60,64,0.92); color: #fff; padding: 10px 24px;
+    border-radius: 20px; font-size: 13px; z-index: 500; white-space: nowrap;
+    opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none;
+    backdrop-filter: blur(10px);
+  }
+  .exit-confirm.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 下拉刷新指示器 */
+  .pull-indicator {
+    text-align: center; padding: 12px; color: var(--gray); font-size: 12px;
+    transition: opacity 0.3s;
+  }
+
+  /* 卡片悬浮效果 */
+  .admin-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .admin-card:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+  /* 侧滑返回视觉反馈 */
+  .swipe-back-indicator {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--primary); border-radius: 0 2px 2px 0;
+    transform: scaleY(0); transition: transform 0.2s ease; z-index: 100;
+  }
+  .swipe-back-indicator.active { transform: scaleY(1); }
+
+  /* Responsive for smaller screens */
+  @media (max-height: 700px) {
+    .phone-frame { height: 95vh; border-radius: 0; box-shadow: none; }
+    .phone-notch { display: none; }
+  }
+  @media (max-width: 420px) {
+    .phone-frame { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+    .phone-notch { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="screen-container" id="app">
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">加载中...</div>
+    </div>
+
+    <!-- 退出确认 -->
+    <div class="exit-confirm" id="exit-confirm">再按一次返回键退出应用</div>
+
+    <!-- 侧滑返回指示器 -->
+    <div class="swipe-back-indicator" id="swipe-indicator"></div>
+
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div class="screen login-screen" id="screen-login">
+      <div class="login-logo">🏅</div>
+      <div class="login-title">计件积分管理</div>
+      <div class="login-subtitle">接触轨二部 · 个人业绩成果计件系统</div>
+      <div class="login-card">
+        <div class="login-input-wrap">
+          <span class="login-input-icon">👤</span>
+          <input class="login-input" id="login-name" placeholder="请输入账号" value="">
+        </div>
+        <div class="login-input-wrap">
+          <span class="login-input-icon">🔒</span>
+          <input class="login-input" id="login-pwd" type="password" placeholder="请输入密码" value="">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--gray);" onclick="toggleRemember()">
+            <div id="remember-check" style="width:18px;height:18px;border-radius:4px;border:2px solid var(--lightGray);display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all 0.15s;">✓</div>
+            记住账号和密码
+          </label>
+        </div>
+        <button class="login-btn" onclick="doLogin()">登 录</button>
+      </div>
+    </div>
+
+    <!-- ===== HOME SCREEN ===== -->
+    <div class="screen hidden" id="screen-home">
+      <div class="home-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="home-greeting" id="home-greeting">你好，管理员</div>
+            <div class="home-date" id="home-date"></div>
+          </div>
+          <div class="home-badge" onclick="navigateTo('approval')">🔔 待审批 <span id="pending-count">3</span></div>
+        </div>
+      </div>
+      <div class="score-cards">
+        <div class="score-card fade-in">
+          <div class="score-card-label">本月积分</div>
+          <div class="score-card-value" style="color:var(--primary)" id="home-month-score">0</div>
+          <div class="score-card-unit">分</div>
+        </div>
+        <div class="score-card fade-in-delay-1">
+          <div class="score-card-label">团队排名</div>
+          <div class="score-card-value" style="color:var(--orange)" id="home-rank">--</div>
+          <div class="score-card-unit" id="home-rank-total">/18人</div>
+        </div>
+        <div class="score-card fade-in-delay-2">
+          <div class="score-card-label">待审批</div>
+          <div class="score-card-value" style="color:var(--red)" id="home-pending">3</div>
+          <div class="score-card-unit">条</div>
+        </div>
+      </div>
+      <div class="section-title">快速操作</div>
+      <div class="quick-actions">
+        <div class="quick-action" onclick="navigateTo('submit')">
+          <div class="quick-action-icon" style="background:rgba(2,128,144,0.1)">✏️</div>
+          <div class="quick-action-label">积分申报</div>
+        </div>
+        <div class="quick-action" onclick="switchTab(1)">
+          <div class="quick-action-icon" style="background:rgba(0,168,150,0.1)">🔍</div>
+          <div class="quick-action-label">标准查询</div>
+        </div>
+        <div class="quick-action" onclick="switchTab(3)">
+          <div class="quick-action-icon" style="background:rgba(2,195,154,0.1)">📊</div>
+          <div class="quick-action-label">统计分析</div>
+        </div>
+        <div class="quick-action" onclick="switchTab(4)">
+          <div class="quick-action-icon" style="background:rgba(255,143,0,0.1)">👤</div>
+          <div class="quick-action-label">个人中心</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 20px;margin-bottom:8px;">
+        <div class="section-title" style="padding:0">🏆 团队排名</div>
+        <div style="font-size:12px;color:var(--primary);cursor:pointer" onclick="switchTab(3)">查看全部 ›</div>
+      </div>
+      <div id="home-ranking"></div>
+      <div style="height:8px"></div>
+      <div class="section-title">最近记录</div>
+      <div id="home-records"></div>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== SUBMIT SCREEN ===== -->
+    <div class="screen hidden" id="screen-submit">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">积分申报</span>
+      </div>
+      <div class="form-section" style="padding-bottom:0;">
+        <!-- 作业日期 -->
+        <div class="form-label">作业日期</div>
+        <input class="form-input" type="date" id="task-date" style="margin-bottom:16px;">
+        <!-- 佐证照片 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="form-label" style="margin-bottom:0;">佐证照片（可选）</div>
+          <div class="photo-upload" id="photo-upload" onclick="uploadPhoto()" style="width:auto;height:auto;padding:6px 14px;flex-direction:row;gap:6px;border-radius:8px;">
+            <span class="photo-upload-icon" style="font-size:16px;">📷</span>
+            <span class="photo-upload-text" style="font-size:11px;">拍照上传</span>
+          </div>
+        </div>
+        <!-- 6大模块选择 -->
+        <div class="form-label">选择作业模块</div>
+        <div class="module-grid" id="module-grid"></div>
+        <!-- 已选摘要 -->
+        <div class="selected-summary" id="selected-summary" style="display:none;">
+          <div class="selected-summary-title">已选择作业（点击 × 可移除）</div>
+          <div class="selected-tags" id="selected-tags"></div>
+        </div>
+        <!-- 子类别与作业列表 -->
+        <div id="category-list"></div>
+        <!-- 底部留白，防止内容被提交栏遮挡 -->
+        <div style="height:100px;"></div>
+      </div>
+      <!-- 提交栏（放在 screen 内部，底部导航上方） -->
+      <div class="submit-bar">
+        <div class="submit-bar-info">
+          <div class="submit-bar-count" id="submit-count">已选 0 项作业</div>
+          <div class="submit-bar-score" id="submit-total-score">0 分</div>
+        </div>
+        <button class="submit-bar-btn" id="submit-bar-btn" disabled onclick="submitScoreMulti()">提交申报</button>
+      </div>
+    </div>
+
+    <!-- ===== APPROVAL SCREEN ===== -->
+    <div class="screen hidden" id="screen-approval">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">审批管理</span>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchApprovalTab(0, this)">待审批 (<span id="tab-pending-count">3</span>)</div>
+        <div class="tab" onclick="switchApprovalTab(1, this)">已审批</div>
+      </div>
+      <div id="approval-pending"></div>
+      <div id="approval-done" style="display:none"></div>
+    </div>
+
+    <!-- ===== STATISTICS SCREEN ===== -->
+    <div class="screen hidden" id="screen-statistics">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">统计分析</span>
+      </div>
+      <div class="period-selector">
+        <span class="period-arrow" onclick="changePeriod(-1)">‹</span>
+        <span class="period-text" id="period-text">2026年4月</span>
+        <span class="period-arrow" onclick="changePeriod(1)">›</span>
+      </div>
+      <div class="tabs" style="margin-bottom:0;">
+        <div class="tab active" onclick="switchStatTab(0, this)">个人积分</div>
+        <div class="tab" onclick="switchStatTab(1, this)">团队排名</div>
+        <div class="tab" onclick="switchStatTab(2, this)">作业统计</div>
+      </div>
+      <div id="stat-personal"></div>
+      <div id="stat-team" style="display:none"></div>
+      <div id="stat-tasks" style="display:none"></div>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== QUERY SCREEN ===== -->
+    <div class="screen hidden" id="screen-query">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">标准查询</span>
+      </div>
+      <div class="form-section" style="padding-top:12px;">
+        <div class="form-label">选择作业模块</div>
+        <div class="module-grid" id="query-module-grid"></div>
+        <div class="results-count" id="query-results-count" style="padding:8px 0;"></div>
+        <div id="query-category-list"></div>
+        <div style="height:100px;"></div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE SCREEN ===== -->
+    <div class="screen hidden" id="screen-profile">
+      <div class="profile-header">
+        <div class="profile-avatar">👤</div>
+        <div class="profile-name" id="profile-name">管理员</div>
+        <div class="profile-role" id="profile-role">系统管理员</div>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="profile-score">0</div>
+          <div class="profile-stat-label">本月积分</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="profile-records">0</div>
+          <div class="profile-stat-label">申报次数</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-value">接触轨</div>
+          <div class="profile-stat-label">部门</div>
+        </div>
+      </div>
+      <div class="menu-list" id="profile-menu">
+        <div class="menu-item" onclick="navigateTo('my-records')">
+          <div class="menu-icon">📋</div>
+          <div class="menu-text"><div class="menu-title">我的记录</div><div class="menu-subtitle">查看我的积分申报记录</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+      <!-- 管理员专属菜单 -->
+      <div class="menu-list" id="admin-menu" style="display:none;">
+        <div style="padding:12px 16px 6px;font-size:12px;color:var(--gray);font-weight:600;">⚙️ 管理员功能</div>
+        <div class="menu-item" onclick="navigateTo('approval')">
+          <div class="menu-icon">✅</div>
+          <div class="menu-text"><div class="menu-title">审批管理</div><div class="menu-subtitle">审核员工积分申报</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" onclick="navigateTo('all-records')">
+          <div class="menu-icon">📋</div>
+          <div class="menu-text"><div class="menu-title">全部记录</div><div class="menu-subtitle">查看/修改所有人员积分申报</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" onclick="navigateTo('users')">
+          <div class="menu-icon">👥</div>
+          <div class="menu-text"><div class="menu-title">用户管理</div><div class="menu-subtitle">新增/编辑/禁用用户账号</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" onclick="navigateTo('standards-mgmt')">
+          <div class="menu-icon">🔧</div>
+          <div class="menu-text"><div class="menu-title">标准维护</div><div class="menu-subtitle">作业标准的新增/修改/删除</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" onclick="navigateTo('export')">
+          <div class="menu-icon">📤</div>
+          <div class="menu-text"><div class="menu-title">导出报表</div><div class="menu-subtitle">导出 Excel/PDF 格式报表</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" onclick="navigateTo('backup')">
+          <div class="menu-icon">💾</div>
+          <div class="menu-text"><div class="menu-title">数据备份</div><div class="menu-subtitle">备份与恢复系统数据</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" onclick="navigateTo('settings')">
+          <div class="menu-icon">⚙️</div>
+          <div class="menu-text"><div class="menu-title">系统设置</div><div class="menu-subtitle">通知、主题等设置</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+      <div class="menu-list">
+        <div class="menu-item">
+          <div class="menu-icon">ℹ️</div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.0.0</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">退出登录</button>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== USER MANAGEMENT SCREEN ===== -->
+    <div class="screen hidden" id="screen-users">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">用户管理</span>
+      </div>
+      <input class="admin-search" placeholder="🔍 搜索用户姓名..." id="user-search" oninput="renderUsers()">
+      <div id="user-list"></div>
+      <button class="admin-fab" onclick="showUserForm()">+</button>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== STANDARD MANAGEMENT SCREEN ===== -->
+    <div class="screen hidden" id="screen-standards-mgmt">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">标准维护</span>
+      </div>
+      <input class="admin-search" placeholder="🔍 搜索作业标准..." id="std-search" oninput="renderStandardsMgmt()">
+      <div class="filter-chips" id="std-mgmt-chips"></div>
+      <div id="std-mgmt-list"></div>
+      <button class="admin-fab" onclick="showStdForm()">+</button>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== EXPORT SCREEN ===== -->
+    <div class="screen hidden" id="screen-export">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">导出报表</span>
+      </div>
+      <div class="period-selector">
+        <span class="period-arrow" onclick="changeExportPeriod(-1)">‹</span>
+        <span class="period-text" id="export-period-text">2026年4月</span>
+        <span class="period-arrow" onclick="changeExportPeriod(1)">›</span>
+      </div>
+      <div style="padding:0 16px;display:flex;gap:8px;margin-bottom:12px;">
+        <div class="chip active" id="export-tab-all" onclick="switchExportTab('all')">全部记录</div>
+        <div class="chip" id="export-tab-approved" onclick="switchExportTab('approved')">已通过</div>
+        <div class="chip" id="export-tab-pending" onclick="switchExportTab('pending')">待审批</div>
+      </div>
+      <div style="padding:0 16px 8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--gray)" id="export-count"></span>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-action-btn btn-edit" onclick="doExport()" style="padding:8px 12px;font-size:12px;">📥 CSV</button>
+          <button class="admin-action-btn btn-primary" onclick="doExportExcel()" style="padding:8px 12px;font-size:12px;">📊 Excel</button>
+        </div>
+      </div>
+      <div style="padding:4px 16px 8px;">
+        <span style="font-size:11px;color:var(--gray);">💡 导出文件将保存到手机「下载」文件夹</span>
+      </div>
+      <div style="padding:0 16px;overflow-x:auto;" id="export-table-wrap"></div>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== MY RECORDS SCREEN ===== -->
+    <div class="screen hidden" id="screen-my-records">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title" id="my-records-title">我的记录</span>
+      </div>
+      <div class="period-selector">
+        <span class="period-arrow" onclick="changeMyRecPeriod(-1)">‹</span>
+        <span class="period-text" id="my-rec-period">2026年4月</span>
+        <span class="period-arrow" onclick="changeMyRecPeriod(1)">›</span>
+      </div>
+      <div style="padding:0 16px;display:flex;gap:8px;margin-bottom:10px;">
+        <div class="chip active" id="myrec-tab-all" onclick="switchMyRecTab('all')">全部</div>
+        <div class="chip" id="myrec-tab-pending" onclick="switchMyRecTab('pending')">待审批</div>
+        <div class="chip" id="myrec-tab-approved" onclick="switchMyRecTab('approved')">已通过</div>
+        <div class="chip" id="myrec-tab-rejected" onclick="switchMyRecTab('rejected')">已驳回</div>
+      </div>
+      <div style="padding:0 16px 8px;">
+        <span style="font-size:12px;color:var(--gray)" id="my-rec-count"></span>
+      </div>
+      <div id="my-records-list"></div>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== ALL RECORDS (ADMIN) SCREEN ===== -->
+    <div class="screen hidden" id="screen-all-records">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">全部记录管理</span>
+      </div>
+      <div class="period-selector">
+        <span class="period-arrow" onclick="changeAllRecPeriod(-1)">‹</span>
+        <span class="period-text" id="all-rec-period">2026年4月</span>
+        <span class="period-arrow" onclick="changeAllRecPeriod(1)">›</span>
+      </div>
+      <div style="padding:0 16px;display:flex;gap:8px;margin-bottom:10px;">
+        <div class="chip active" id="allrec-tab-all" onclick="switchAllRecTab('all')">全部</div>
+        <div class="chip" id="allrec-tab-pending" onclick="switchAllRecTab('pending')">待审批</div>
+        <div class="chip" id="allrec-tab-approved" onclick="switchAllRecTab('approved')">已通过</div>
+        <div class="chip" id="allrec-tab-rejected" onclick="switchAllRecTab('rejected')">已驳回</div>
+      </div>
+      <div style="padding:0 16px 8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--gray)" id="all-rec-count"></span>
+        <input class="admin-search" style="margin:0;width:auto;flex:1;max-width:180px;" placeholder="🔍 搜索姓名..." id="allrec-search" oninput="renderAllRecords()">
+      </div>
+      <div id="all-records-list"></div>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== BACKUP SCREEN ===== -->
+    <div class="screen hidden" id="screen-backup">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">数据备份</span>
+      </div>
+      <div class="backup-card">
+        <div class="backup-icon">💾</div>
+        <div class="backup-title">数据备份</div>
+        <div class="backup-desc">将当前所有数据导出为备份文件</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:8px;" id="backup-info">共 19 个用户 · 0 条记录</div>
+        <button class="backup-btn btn-primary" onclick="doBackup()">📥 立即备份</button>
+      </div>
+      <div class="backup-card">
+        <div class="backup-icon">📂</div>
+        <div class="backup-title">数据恢复</div>
+        <div class="backup-desc">从备份文件恢复系统数据</div>
+        <div style="font-size:11px;color:var(--red);margin-top:8px;">⚠️ 恢复操作将覆盖当前所有数据</div>
+        <button class="backup-btn btn-edit" onclick="doRestore()" style="border:1px solid var(--lightGray);background:#fff;">📂 选择备份文件</button>
+      </div>
+      <div class="backup-card">
+        <div class="backup-icon">🔄</div>
+        <div class="backup-title">自动备份</div>
+        <div class="backup-desc">系统每日自动备份数据</div>
+        <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--gray)">上次备份：今天 08:00</span>
+          <div class="toggle-switch on" id="auto-backup-toggle" onclick="this.classList.toggle('on');showToast(this.classList.contains('on')?'✅ 已开启自动备份':'❌ 已关闭自动备份')"></div>
+        </div>
+      </div>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== SETTINGS SCREEN ===== -->
+    <div class="screen hidden" id="screen-settings">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">系统设置</span>
+      </div>
+      <div style="padding:12px 16px 6px;font-size:12px;color:var(--gray);font-weight:600;">🔔 通知设置</div>
+      <div style="margin:0 16px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);">
+        <div class="setting-item">
+          <div><div class="setting-label">审批通知</div><div class="setting-desc">有新的审批请求时通知</div></div>
+          <div class="toggle-switch on" id="set-notify-approve" onclick="toggleSetting(this,'审批通知')"></div>
+        </div>
+        <div class="setting-item">
+          <div><div class="setting-label">审批结果通知</div><div class="setting-desc">审批通过/驳回时通知员工</div></div>
+          <div class="toggle-switch on" id="set-notify-result" onclick="toggleSetting(this,'审批结果通知')"></div>
+        </div>
+        <div class="setting-item">
+          <div><div class="setting-label">积分变动提醒</div><div class="setting-desc">积分发生变化时提醒</div></div>
+          <div class="toggle-switch" id="set-notify-score" onclick="toggleSetting(this,'积分变动提醒')"></div>
+        </div>
+      </div>
+      <div style="padding:16px 16px 6px;font-size:12px;color:var(--gray);font-weight:600;">📊 统计设置</div>
+      <div style="margin:0 16px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);">
+        <div class="setting-item" onclick="changeStatPeriod()" style="cursor:pointer;">
+          <div><div class="setting-label">统计周期</div><div class="setting-desc">设置积分统计的时间范围</div></div>
+          <span style="font-size:12px;color:var(--primary);font-weight:600;" id="set-stat-period">自然月 ›</span>
+        </div>
+        <div class="setting-item" onclick="changeRankCount()" style="cursor:pointer;">
+          <div><div class="setting-label">排名显示人数</div><div class="setting-desc">排行榜显示的人数</div></div>
+          <span style="font-size:12px;color:var(--primary);font-weight:600;" id="set-rank-count">全部 ›</span>
+        </div>
+      </div>
+      <div style="padding:16px 16px 6px;font-size:12px;color:var(--gray);font-weight:600;">🔒 安全设置</div>
+      <div style="margin:0 16px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);">
+        <div class="setting-item" onclick="changePassword()" style="cursor:pointer;">
+          <div><div class="setting-label">修改密码</div><div class="setting-desc">定期修改密码保障安全</div></div>
+          <span style="font-size:12px;color:var(--primary);font-weight:600;">修改 ›</span>
+        </div>
+        <div class="setting-item" onclick="showOperationLog()" style="cursor:pointer;">
+          <div><div class="setting-label">操作日志</div><div class="setting-desc">查看系统操作记录</div></div>
+          <span style="font-size:12px;color:var(--primary);font-weight:600;">查看 ›</span>
+        </div>
+      </div>
+      <div style="padding:16px 16px 6px;font-size:12px;color:var(--gray);font-weight:600;">🗑️ 数据管理</div>
+      <div style="margin:0 16px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);">
+        <div class="setting-item" onclick="clearAllData()" style="cursor:pointer;">
+          <div><div class="setting-label">清除所有数据</div><div class="setting-desc">清除所有积分记录和用户数据</div></div>
+          <span style="font-size:12px;color:var(--red);font-weight:600;">清除 ›</span>
+        </div>
+      </div>
+      <div style="height:100px"></div>
+    </div>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <div class="bottom-nav" id="bottom-nav" style="display:none;">
+      <div class="nav-item active" onclick="switchTab(0)">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">首页</span>
+      </div>
+      <div class="nav-item" onclick="switchTab(1)">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">查询</span>
+      </div>
+      <div class="nav-item" onclick="switchTab(2)">
+        <span class="nav-icon">➕</span>
+        <span class="nav-label">申报</span>
+      </div>
+      <div class="nav-item" onclick="switchTab(3)">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">统计</span>
+      </div>
+      <div class="nav-item" onclick="switchTab(4)">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">我的</span>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-sheet" id="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">选择作业类型</div>
+      <div class="modal-list" id="modal-list"></div>
+    </div>
+
+    <!-- 通用弹窗 -->
+    <div class="popup-overlay" id="popup-overlay" onclick="closePopup()">
+      <div class="popup-box" id="popup-box" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <!-- USER EDIT MODAL -->
+    <div class="modal-overlay" id="user-edit-overlay" onclick="closeUserEditModal()"></div>
+    <div class="modal-sheet" id="user-edit-sheet" style="max-height:80%;">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="user-edit-title">编辑用户</div>
+      <div style="padding:0 20px 20px;overflow-y:auto;">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">姓名</label>
+          <input id="edit-user-name" type="text" placeholder="请输入姓名" style="width:100%;padding:10px 12px;border:1px solid var(--lightGray);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;" />
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">账号</label>
+          <input id="edit-user-account" type="text" placeholder="请输入账号" style="width:100%;padding:10px 12px;border:1px solid var(--lightGray);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;" />
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">密码</label>
+          <input id="edit-user-pwd" type="text" placeholder="请输入新密码（留空不修改）" style="width:100%;padding:10px 12px;border:1px solid var(--lightGray);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;" />
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:6px;">角色</label>
+          <div style="display:flex;gap:8px;" id="edit-role-group">
+            <div class="chip" data-role="employee" onclick="selectEditRole('employee')">普通员工</div>
+            <div class="chip" data-role="manager" onclick="selectEditRole('manager')">部门管理员</div>
+            <div class="chip" data-role="admin" onclick="selectEditRole('admin')">系统管理员</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="closeUserEditModal()" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--lightGray);background:#fff;font-size:14px;color:var(--gray);cursor:pointer;">取消</button>
+          <button onclick="saveUserEdit()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const STANDARDS = [
+  {id:1,module:'计划修作业',category:'设备检修',content:'动车作业',unit:'每次',score:4},
+  {id:2,module:'计划修作业',category:'设备检修',content:'可视化自动接地系统检修作业',unit:'每次',score:3},
+  {id:3,module:'计划修作业',category:'设备检修',content:'电动隔离开关检修作业',unit:'每次',score:3},
+  {id:4,module:'计划修作业',category:'设备检修',content:'手动隔离开关检修作业',unit:'每次',score:3},
+  {id:5,module:'计划修作业',category:'设备检修',content:'监控子站检修作业',unit:'每次',score:3},
+  {id:6,module:'计划修作业',category:'设备检修',content:'区间过渡电阻测试',unit:'每次',score:3},
+  {id:7,module:'计划修作业',category:'设备检修',content:'避雷器测试',unit:'每次',score:3},
+  {id:8,module:'计划修作业',category:'设备检修',content:'均流箱检修作业',unit:'每次',score:3},
+  {id:9,module:'计划修作业',category:'设备检修',content:'接触轨停电作业',unit:'每次',score:3},
+  {id:10,module:'计划修作业',category:'设备检修',content:'接触轨送电作业',unit:'每次',score:3},
+  {id:11,module:'计划修作业',category:'设备检修',content:'绝缘子清扫作业',unit:'每次',score:3},
+  {id:12,module:'计划修作业',category:'设备检修',content:'接触轨端部弯头检修',unit:'每次',score:3},
+  {id:13,module:'计划修作业',category:'设备检修',content:'膨胀接头检修',unit:'每次',score:3},
+  {id:14,module:'计划修作业',category:'设备检修',content:'中心锚结检修',unit:'每次',score:3},
+  {id:15,module:'计划修作业',category:'设备检修',content:'防护罩检修',unit:'每次',score:3},
+  {id:16,module:'计划修作业',category:'设备检修',content:'接触轨综合检修',unit:'每次',score:3},
+  {id:17,module:'计划修作业',category:'设备检修',content:'回流箱检修',unit:'每次',score:3},
+  {id:18,module:'计划修作业',category:'设备检修',content:'单向导通装置检修',unit:'每次',score:3},
+  {id:19,module:'计划修作业',category:'设备检修',content:'车场线检修',unit:'每次',score:3},
+  {id:20,module:'计划修作业',category:'设备检修',content:'上网隔离开关检修',unit:'每次',score:3},
+  {id:21,module:'计划修作业',category:'设备检修',content:'车场隔离开关检修',unit:'每次',score:3},
+  {id:22,module:'计划修作业',category:'设备检修',content:'回流柜检修',unit:'每次',score:3},
+  {id:23,module:'计划修作业',category:'人员分工',content:'施工负责人',unit:'每次',score:3},
+  {id:24,module:'计划修作业',category:'人员分工',content:'辅站责任人',unit:'每次',score:2},
+  {id:25,module:'计划修作业',category:'人员分工',content:'材料员',unit:'每次',score:2},
+  {id:26,module:'计划修作业',category:'人员分工',content:'安全员',unit:'每次',score:2},
+  {id:27,module:'计划修作业',category:'特种作业',content:'高架作业',unit:'每次',score:3},
+  {id:28,module:'配合作业',category:'配合类型',content:'配合工建专业',unit:'每次',score:3},
+  {id:29,module:'配合作业',category:'配合类型',content:'配合车辆专业',unit:'每次',score:3},
+  {id:30,module:'配合作业',category:'配合类型',content:'配合信号专业',unit:'每次',score:3},
+  {id:31,module:'配合作业',category:'作业类型',content:'配合施工',unit:'每次',score:3},
+  {id:32,module:'配合作业',category:'作业类型',content:'配合调试',unit:'每次',score:3},
+  {id:33,module:'配合作业',category:'作业类型',content:'配合抢修',unit:'每次',score:5},
+  {id:34,module:'日常运作',category:'巡视保障',content:'驻点值班保障',unit:'每次',score:3},
+  {id:35,module:'日常运作',category:'巡视保障',content:'工班值班保障',unit:'每次',score:2},
+  {id:36,module:'日常运作',category:'巡视保障',content:'巡视检查',unit:'每次',score:2},
+  {id:37,module:'日常运作',category:'巡视保障',content:'设备巡视',unit:'每次',score:2},
+  {id:38,module:'日常运作',category:'巡视保障',content:'温度测量',unit:'每次',score:2},
+  {id:39,module:'日常运作',category:'巡视保障',content:'参与活动、物资搬运、卫生打扫等其他工作',unit:'每次',score:2},
+  {id:40,module:'日常运作',category:'巡视保障',content:'节假日值班保障',unit:'每次',score:5},
+  {id:41,module:'日常运作',category:'巡视保障',content:'应急值班保障',unit:'每次',score:5},
+  {id:42,module:'日常运作',category:'巡视保障',content:'专项巡视',unit:'每次',score:3},
+  {id:43,module:'故障处理',category:'人员作用',content:'故障处理负责人',unit:'每次',score:5},
+  {id:44,module:'故障处理',category:'人员作用',content:'故障处理主要参与人',unit:'每次',score:4},
+  {id:45,module:'故障处理',category:'人员作用',content:'故障处理配合人员',unit:'每次',score:3},
+  {id:46,module:'故障处理',category:'人员作用',content:'故障处理信息报送',unit:'每次',score:2},
+  {id:47,module:'故障处理',category:'故障级别',content:'A、B级',unit:'每次',score:5},
+  {id:48,module:'故障处理',category:'故障级别',content:'C级',unit:'每次',score:3},
+  {id:49,module:'故障处理',category:'故障级别',content:'其他',unit:'每次',score:1},
+  {id:50,module:'专项工作',category:'新线工作',content:'参建（一天3分，半天1.5分）',unit:'每次',score:3},
+  {id:51,module:'模块工作',category:'兼职模块',content:'综合模块',unit:'每月',score:8},
+  {id:52,module:'模块工作',category:'兼职模块',content:'安全模块',unit:'每月',score:8},
+  {id:53,module:'模块工作',category:'兼职模块',content:'生产模块',unit:'每月',score:8},
+  {id:54,module:'模块工作',category:'兼职模块',content:'物资模块',unit:'每月',score:8},
+  {id:55,module:'模块工作',category:'兼职模块',content:'培训模块',unit:'每月',score:8},
+  {id:56,module:'模块工作',category:'兼职模块',content:'标准化模块及班组建设',unit:'每月',score:8},
+];
+
+const DEFAULT_USERS = [
+  {id:1,name:'刘晓阳',role:'employee',pwd:'',account:'1001'},
+  {id:2,name:'周奥青',role:'employee',pwd:'',account:'1002'},
+  {id:3,name:'马鹏程',role:'employee',pwd:'',account:'1003'},
+  {id:4,name:'王志波',role:'employee',pwd:'',account:'1004'},
+  {id:5,name:'周江涛',role:'employee',pwd:'',account:'1005'},
+  {id:6,name:'吴立志',role:'employee',pwd:'',account:'1006'},
+  {id:7,name:'刘超',role:'employee',pwd:'',account:'1007'},
+  {id:8,name:'李坤',role:'employee',pwd:'',account:'1008'},
+  {id:9,name:'张文博',role:'employee',pwd:'',account:'1009'},
+  {id:10,name:'薛丰毅',role:'employee',pwd:'',account:'1010'},
+  {id:11,name:'黄志豪',role:'employee',pwd:'',account:'1011'},
+  {id:12,name:'赵智龙',role:'employee',pwd:'',account:'1012'},
+  {id:13,name:'田洪大',role:'employee',pwd:'',account:'1013'},
+  {id:14,name:'朱新明',role:'employee',pwd:'',account:'1014'},
+  {id:15,name:'王伟杰',role:'employee',pwd:'',account:'1015'},
+  {id:16,name:'张鑫',role:'employee',pwd:'',account:'1016'},
+  {id:17,name:'韩枫',role:'employee',pwd:'',account:'1017'},
+  {id:18,name:'王元坤',role:'employee',pwd:'',account:'1018'},
+  {id:19,name:'开发者',role:'superadmin',pwd:'06012510',account:'06012510'},
+  {id:20,name:'管理员',role:'admin',pwd:'06012524',account:'06012524'},
+];
+
+// 从 localStorage 加载用户数据，如果没有则用默认数据
+function loadUsers() {
+  const saved = localStorage.getItem('app_users');
+  const version = localStorage.getItem('app_users_version');
+  if (saved && version === '2') {
+    try { return JSON.parse(saved); } catch(e) {}
+  }
+  // 版本不匹配或无数据，用默认数据并保存
+  localStorage.setItem('app_users_version', '2');
+  localStorage.removeItem('app_users'); // 清除旧数据
+  return JSON.parse(JSON.stringify(DEFAULT_USERS));
+}
+function saveUsers() {
+  localStorage.setItem('app_users', JSON.stringify(USERS));
+}
+
+// 角色判断辅助函数
+function isAdminRole(role) { return role === 'superadmin' || role === 'admin' || role === 'manager'; }
+function isSuperAdmin(role) { return role === 'superadmin'; }
+function canManageAdmins(role) { return role === 'superadmin'; } // 只有开发者能管理系统管理员
+const roleNames = {superadmin:'开发者',admin:'系统管理员',manager:'部门管理员',employee:'普通员工'};
+
+let USERS = loadUsers();
+
+let currentUser = null;
+let records = [];
+let nextId = 100;
+let taskCount = 1;
+let photoUploaded = false;
+let photoFileName = '';
+let selectedModule = '全部';
+let currentTab = 0;
+let statYear = 2026, statMonth = 4;
+let navStack = ['home'];
+
+// Init demo records
+function initRecords() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth() + 1;
+  const demo = [
+    {uid:2,un:'周奥青',tid:34,tn:'驻点值班保障',d:26,c:1,s:3,st:'approved'},
+    {uid:2,un:'周奥青',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:5,un:'周江涛',tid:34,tn:'驻点值班保障',d:26,c:1,s:3,st:'approved'},
+    {uid:5,un:'周江涛',tid:35,tn:'工班值班保障',d:27,c:1,s:2,st:'approved'},
+    {uid:5,un:'周江涛',tid:34,tn:'驻点值班保障',d:28,c:1,s:3,st:'approved'},
+    {uid:7,un:'刘超',tid:34,tn:'驻点值班保障',d:26,c:1,s:3,st:'approved'},
+    {uid:7,un:'刘超',tid:35,tn:'工班值班保障',d:27,c:1,s:2,st:'approved'},
+    {uid:7,un:'刘超',tid:34,tn:'驻点值班保障',d:28,c:1,s:3,st:'approved'},
+    {uid:11,un:'黄志豪',tid:34,tn:'驻点值班保障',d:26,c:1,s:3,st:'approved'},
+    {uid:11,un:'黄志豪',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:8,un:'李坤',tid:35,tn:'工班值班保障',d:26,c:1,s:2,st:'approved'},
+    {uid:8,un:'李坤',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:16,un:'张鑫',tid:35,tn:'工班值班保障',d:26,c:1,s:2,st:'approved'},
+    {uid:16,un:'张鑫',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:1,un:'刘晓阳',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:3,un:'马鹏程',tid:35,tn:'工班值班保障',d:26,c:1,s:2,st:'approved'},
+    {uid:4,un:'王志波',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:9,un:'张文博',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:10,un:'薛丰毅',tid:35,tn:'工班值班保障',d:26,c:1,s:2,st:'approved'},
+    {uid:12,un:'赵智龙',tid:35,tn:'工班值班保障',d:26,c:1,s:2,st:'approved'},
+    {uid:13,un:'田洪大',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:14,un:'朱新明',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:15,un:'王伟杰',tid:39,tn:'参与活动、物资搬运、卫生打扫等其他工作',d:26,c:1,s:2,st:'approved'},
+    {uid:17,un:'韩枫',tid:34,tn:'驻点值班保障',d:27,c:1,s:3,st:'approved'},
+    {uid:18,un:'王元坤',tid:35,tn:'工班值班保障',d:26,c:1,s:2,st:'approved'},
+    {uid:6,un:'吴立志',tid:39,tn:'参与活动、物资搬运、卫生打扫等其他工作',d:26,c:1,s:2,st:'approved'},
+    // Pending
+    {uid:1,un:'刘晓阳',tid:1,tn:'动车作业',d:now.getDate(),c:1,s:4,st:'pending'},
+    {uid:5,un:'周江涛',tid:34,tn:'驻点值班保障',d:now.getDate(),c:1,s:3,st:'pending'},
+    {uid:11,un:'黄志豪',tid:35,tn:'工班值班保障',d:now.getDate(),c:1,s:2,st:'pending'},
+  ];
+  demo.forEach(d => {
+    records.push({id: nextId++, userId: d.uid, userName: d.un, taskId: d.tid,
+      taskName: d.tn, date: new Date(y, m-1, d.d), count: d.c, score: d.s,
+      status: d.st, createdAt: new Date()});
+  });
+}
+
+// ===== NAVIGATION =====
+let navDirection = 'forward'; // 'forward' | 'back'
+
+function showScreen(id) {
+  const screens = document.querySelectorAll('.screen');
+
+  screens.forEach(s => {
+    // 先清除所有状态类
+    s.classList.remove('hidden', 'hidden-left', 'slide-in-right', 'slide-in-left');
+
+    if (s.id === 'screen-' + id) {
+      // 目标屏幕：设为可见
+      s.scrollTop = 0;
+    } else {
+      // 其他屏幕：隐藏
+      s.classList.add('hidden');
+    }
+  });
+
+  const nav = document.getElementById('bottom-nav');
+  nav.style.display = ['home','query','submit','statistics','profile'].includes(id) ? 'flex' : 'none';
+}
+
+function navigateTo(screen) {
+  navDirection = 'forward';
+  navStack.push(screen);
+  showScreen(screen);
+  if (screen === 'home') renderHome();
+  if (screen === 'approval') renderApproval();
+  if (screen === 'statistics') renderStatistics();
+  if (screen === 'query') renderQuery();
+  if (screen === 'profile') renderProfile();
+  if (screen === 'users') renderUsers();
+  if (screen === 'standards-mgmt') renderStandardsMgmt();
+  if (screen === 'export') renderExport();
+  if (screen === 'backup') renderBackup();
+  if (screen === 'all-records') renderAllRecords();
+  if (screen === 'my-records') renderMyRecords();
+}
+
+function goBack() {
+  const tabs = ['home','query','submit','statistics','profile'];
+  if (navStack.length > 1) {
+    navDirection = 'back';
+    navStack.pop();
+    const target = navStack[navStack.length - 1];
+    showScreen(target);
+    // 返回到主 Tab 页时同步底部导航高亮
+    const tabIdx = tabs.indexOf(target);
+    if (tabIdx >= 0) {
+      currentTab = tabIdx;
+      document.querySelectorAll('.nav-item').forEach((n,i) => n.classList.toggle('active', i===tabIdx));
+    }
+  } else if (navStack.length === 1 && tabs.includes(navStack[0]) && navStack[0] !== 'home') {
+    // 在非首页的 Tab 页上点返回，回到首页
+    switchTab(0);
+  }
+}
+
+function switchTab(idx) {
+  const screens = ['home','query','submit','statistics','profile'];
+  navDirection = 'forward';
+  navStack = [screens[idx]];
+  currentTab = idx;
+  showScreen(screens[idx]);
+  document.querySelectorAll('.nav-item').forEach((n,i) => n.classList.toggle('active', i===idx));
+  if (idx===0) renderHome();
+  if (idx===1) renderQuery();
+  if (idx===3) renderStatistics();
+  if (idx===4) renderProfile();
+}
+
+let rememberPwd = localStorage.getItem('rememberPwd') === 'true';
+
+function toggleRemember() {
+  rememberPwd = !rememberPwd;
+  const el = document.getElementById('remember-check');
+  if (rememberPwd) {
+    el.style.background = 'var(--primary)'; el.style.borderColor = 'var(--primary)'; el.style.color = '#fff';
+  } else {
+    el.style.background = 'transparent'; el.style.borderColor = 'var(--lightGray)'; el.style.color = 'transparent';
+    localStorage.removeItem('savedAccount'); localStorage.removeItem('savedPwd'); localStorage.removeItem('rememberPwd');
+  }
+}
+
+function loadSavedLogin() {
+  const saved = localStorage.getItem('savedAccount');
+  const savedPwd = localStorage.getItem('savedPwd');
+  if (saved) document.getElementById('login-name').value = saved;
+  if (savedPwd) document.getElementById('login-pwd').value = savedPwd;
+  if (rememberPwd) {
+    const el = document.getElementById('remember-check');
+    el.style.background = 'var(--primary)'; el.style.borderColor = 'var(--primary)'; el.style.color = '#fff';
+  }
+}
+
+// ===== LOGIN =====
+function doLogin() {
+  const account = document.getElementById('login-name').value.trim();
+  const pwd = document.getElementById('login-pwd').value.trim();
+  if (!account) { showToast('请输入账号'); return; }
+  if (!pwd) { showToast('请输入密码'); return; }
+
+  showLoading('正在登录...');
+
+  setTimeout(() => {
+    // 管理员账号密码验证（支持账号名或姓名登录）
+    const adminUser = USERS.find(u => (u.name === account || u.account === account) && u.pwd === pwd);
+    if (adminUser) {
+      currentUser = adminUser;
+      if (rememberPwd) {
+        localStorage.setItem('savedAccount', account);
+        localStorage.setItem('savedPwd', pwd);
+        localStorage.setItem('rememberPwd', 'true');
+      }
+      hideLoading();
+      showToast('✅ 登录成功，欢迎 ' + currentUser.name);
+      setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+      return;
+    }
+
+    // 普通员工：输入姓名即可登录
+    const empUser = USERS.find(u => u.name === account && u.role === 'employee');
+    if (empUser) {
+      currentUser = empUser;
+      if (rememberPwd) {
+        localStorage.setItem('savedAccount', account);
+        localStorage.setItem('savedPwd', pwd);
+        localStorage.setItem('rememberPwd', 'true');
+      }
+      hideLoading();
+      showToast('✅ 登录成功，欢迎 ' + currentUser.name);
+      setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+      return;
+    }
+
+    hideLoading();
+    showToast('❌ 账号或密码错误');
+  }, 600);
+}
+
+function doLogout() {
+  currentUser = null;
+  navStack = ['login'];
+  showScreen('login');
+  showToast('已退出登录');
+}
+
+// ===== HOME =====
+function renderHome() {
+  if (!currentUser) return;
+  document.getElementById('home-greeting').textContent = '你好，' + currentUser.name;
+  const now = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  document.getElementById('home-date').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${days[now.getDay()]}`;
+
+  const pending = records.filter(r => r.status === 'pending');
+  document.getElementById('pending-count').textContent = pending.length;
+  document.getElementById('home-pending').textContent = pending.length;
+
+  // Month score - 按当前月份过滤
+  const curMonth = now.getFullYear() + '-' + now.getMonth();
+  const myApproved = records.filter(r => r.userId === currentUser.id && r.status === 'approved'
+    && r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth());
+  const monthScore = myApproved.reduce((s,r) => s + r.score, 0);
+  document.getElementById('home-month-score').textContent = monthScore;
+
+  // Ranking - 按当前月份过滤
+  const scores = {};
+  records.filter(r => r.status === 'approved'
+    && r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth())
+    .forEach(r => { scores[r.userName] = (scores[r.userName]||0) + r.score; });
+  const ranking = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  const myRank = ranking.findIndex(e => e[0] === currentUser.name) + 1;
+  document.getElementById('home-rank').textContent = myRank > 0 ? '#' + myRank : '--';
+  document.getElementById('home-rank-total').textContent = '/' + ranking.length + '人';
+
+  // Records - 管理员看全部，员工看自己，按当前月份过滤
+  const isAdmin = isAdminRole(currentUser.role);
+  const myRecords = records.filter(r =>
+    (isAdmin || r.userId === currentUser.id)
+    && r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth()
+  ).sort((a,b) => b.date - a.date).slice(0,5);
+  document.getElementById('home-records').innerHTML = myRecords.map(r => {
+    const sc = r.status==='approved'?'status-approved':r.status==='rejected'?'status-rejected':'status-pending';
+    const st = r.status==='approved'?'已通过':r.status==='rejected'?'已驳回':'待审批';
+    return `<div class="record-item"><div><div class="record-name">${r.taskName}</div><div class="record-date">${r.date.getMonth()+1}/${r.date.getDate()}</div></div><div style="display:flex;align-items:center"><span class="record-score">+${r.score}分</span><span class="record-status ${sc}">${st}</span></div></div>`;
+  }).join('');
+
+  // Ranking
+  document.getElementById('home-ranking').innerHTML = ranking.slice(0,5).map((e,i) => {
+    const mc = i===0?'#FF8F00':i===1?'#78909C':i===2?'#8D6E63':'#B2DFDB';
+    return `<div class="ranking-item"><div class="ranking-medal" style="background:${mc}">${i+1}</div><div class="ranking-name">${e[0]}</div><div class="ranking-score">${e[1]}分</div></div>`;
+  }).join('');
+  // 列表入场动画
+  addListAnimation(document.getElementById('home-records'));
+  addListAnimation(document.getElementById('home-ranking'));
+}
+
+// ===== SUBMIT (Multi-select) =====
+const MODULE_ICONS = {'计划修作业':'🔧','配合作业':'🤝','日常运作':'🚶','故障处理':'⚡','专项工作':'🏗️','模块工作':'📦'};
+let selectedTaskIds = new Set();
+let openModules = new Set();
+let openCategories = new Set();
+
+function initSubmit() {
+  document.getElementById('task-date').value = new Date().toISOString().split('T')[0];
+  renderModuleGrid();
+}
+
+function getModuleData() {
+  const modules = {};
+  STANDARDS.forEach(s => {
+    if (!modules[s.module]) modules[s.module] = {};
+    if (!modules[s.module][s.category]) modules[s.module][s.category] = [];
+    modules[s.module][s.category].push(s);
+  });
+  return modules;
+}
+
+function renderModuleGrid() {
+  const data = getModuleData();
+  const grid = document.getElementById('module-grid');
+  grid.innerHTML = Object.entries(data).map(([mod, cats]) => {
+    const count = Object.values(cats).reduce((s, arr) => s + arr.length, 0);
+    const catCount = Object.keys(cats).length;
+    return `<div class="module-card" id="mod-${mod}" onclick="toggleModule('${mod}')">
+      <div class="module-card-check">✓</div>
+      <div class="module-card-icon">${MODULE_ICONS[mod]||'📋'}</div>
+      <div class="module-card-name">${mod}</div>
+      <div class="module-card-count">${catCount}类 · ${count}项</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleModule(mod) {
+  if (openModules.has(mod)) {
+    openModules.delete(mod);
+  } else {
+    openModules.add(mod);
+  }
+  renderCategoryList();
+  // Update module card visual
+  document.querySelectorAll('.module-card').forEach(el => el.classList.remove('selected'));
+  openModules.forEach(m => { const el = document.getElementById('mod-' + m); if (el) el.classList.add('selected'); });
+}
+
+function renderCategoryList() {
+  const data = getModuleData();
+  const container = document.getElementById('category-list');
+  let html = '';
+
+  openModules.forEach(mod => {
+    const cats = data[mod];
+    if (!cats) return;
+
+    Object.entries(cats).forEach(([cat, tasks]) => {
+      const isOpen = openCategories.has(mod + '|' + cat);
+      const selectedInCat = tasks.filter(t => selectedTaskIds.has(t.id)).length;
+
+      html += `<div class="category-section">
+        <div class="category-header" onclick="toggleCategory('${mod}','${cat}')">
+          <div style="display:flex;align-items:center;">
+            <span class="category-name">${cat}</span>
+            <span class="category-count">${tasks.length}项${selectedInCat > 0 ? ' · 已选' + selectedInCat : ''}</span>
+          </div>
+          <span class="category-arrow ${isOpen?'open':''}">›</span>
+        </div>
+        <div class="task-check-list ${isOpen?'open':''}">
+          ${tasks.map(t => {
+            const checked = selectedTaskIds.has(t.id) ? 'checked' : '';
+            return `<div class="task-check-item ${checked}" onclick="toggleTask(${t.id})">
+              <div class="task-checkbox">✓</div>
+              <div class="task-check-info"><div class="task-check-name">${t.content}</div></div>
+              <div class="task-check-score">${t.score}分</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    });
+  });
+
+  container.innerHTML = html || '<div style="text-align:center;padding:30px 0;color:var(--gray);font-size:13px;">👆 请先选择上方的作业模块</div>';
+  updateSelectedSummary();
+}
+
+function toggleCategory(mod, cat) {
+  const key = mod + '|' + cat;
+  if (openCategories.has(key)) openCategories.delete(key);
+  else openCategories.add(key);
+  renderCategoryList();
+}
+
+function toggleTask(taskId) {
+  if (selectedTaskIds.has(taskId)) selectedTaskIds.delete(taskId);
+  else selectedTaskIds.add(taskId);
+  renderCategoryList();
+}
+
+function removeTask(taskId) {
+  selectedTaskIds.delete(taskId);
+  renderCategoryList();
+}
+
+function updateSelectedSummary() {
+  const summary = document.getElementById('selected-summary');
+  const tags = document.getElementById('selected-tags');
+  const countEl = document.getElementById('submit-count');
+  const scoreEl = document.getElementById('submit-total-score');
+  const btn = document.getElementById('submit-bar-btn');
+
+  if (selectedTaskIds.size === 0) {
+    summary.style.display = 'none';
+    countEl.textContent = '已选 0 项作业';
+    scoreEl.textContent = '0 分';
+    btn.disabled = true;
+    return;
+  }
+
+  summary.style.display = 'block';
+  let totalScore = 0;
+  let tagHtml = '';
+  selectedTaskIds.forEach(id => {
+    const t = STANDARDS.find(s => s.id === id);
+    if (t) {
+      totalScore += t.score;
+      const shortName = t.content.length > 8 ? t.content.substring(0, 8) + '…' : t.content;
+      tagHtml += `<span class="selected-tag">${shortName} <span class="selected-tag-remove" onclick="event.stopPropagation();removeTask(${id})">×</span></span>`;
+    }
+  });
+  tags.innerHTML = tagHtml;
+  countEl.textContent = `已选 ${selectedTaskIds.size} 项作业`;
+  scoreEl.textContent = totalScore + ' 分';
+  btn.disabled = false;
+}
+
+function uploadPhoto() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'environment'; // 优先使用相机
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) { document.body.removeChild(input); return; }
+    photoUploaded = true;
+    photoFileName = file.name;
+    const el = document.getElementById('photo-upload');
+    el.classList.add('photo-uploaded');
+    el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
+    showToast('📷 照片已选择：' + file.name);
+    document.body.removeChild(input);
+  };
+
+  // 如果 input.click() 失败（某些 WebView 环境），提供选择弹窗
+  try {
+    input.click();
+  } catch(e) {
+    document.body.removeChild(input);
+    popupConfirm('选择照片', '请选择拍照或从相册选择', () => {
+      // 再次尝试，不设置 capture 属性（从相册选择）
+      const input2 = document.createElement('input');
+      input2.type = 'file';
+      input2.accept = 'image/*';
+      input2.style.display = 'none';
+      document.body.appendChild(input2);
+      input2.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) { document.body.removeChild(input2); return; }
+        photoUploaded = true;
+        photoFileName = file.name;
+        const el = document.getElementById('photo-upload');
+        el.classList.add('photo-uploaded');
+        el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
+        showToast('📷 照片已选择：' + file.name);
+        document.body.removeChild(input2);
+      };
+      try { input2.click(); } catch(e2) {
+        document.body.removeChild(input2);
+        showToast('⚠️ 当前环境不支持拍照，已跳过');
+        photoUploaded = true;
+        const el = document.getElementById('photo-upload');
+        el.classList.add('photo-uploaded');
+        el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">已上传</span>';
+      }
+    });
+  }
+}
+
+function submitScoreMulti() {
+  if (selectedTaskIds.size === 0) return;
+  const dateStr = document.getElementById('task-date').value;
+  if (!dateStr) { showToast('请选择作业日期'); return; }
+
+  showLoading('正在提交...');
+
+  setTimeout(() => {
+    selectedTaskIds.forEach(id => {
+      const task = STANDARDS.find(s => s.id === id);
+      if (task) {
+        records.push({
+          id: nextId++, userId: currentUser.id, userName: currentUser.name,
+          taskId: task.id, taskName: task.content,
+          date: new Date(dateStr), count: 1, score: task.score,
+          status: 'pending', createdAt: new Date()
+        });
+      }
+    });
+
+    hideLoading();
+    showToast(`✅ 成功提交 ${selectedTaskIds.size} 项作业申报`);
+    // Reset
+    selectedTaskIds.clear();
+    openModules.clear();
+    openCategories.clear();
+    photoUploaded = false;
+    photoFileName = '';
+    const el = document.getElementById('photo-upload');
+    el.classList.remove('photo-uploaded');
+    el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">📷</span><span class="photo-upload-text" style="font-size:11px;">拍照上传</span>';
+    renderModuleGrid();
+    renderCategoryList();
+    setTimeout(() => switchTab(0), 600);
+  }, 500);
+}
+
+// ===== APPROVAL =====
+function renderApproval() {
+  const pending = records.filter(r => r.status === 'pending');
+  const done = records.filter(r => r.status !== 'pending');
+  document.getElementById('tab-pending-count').textContent = pending.length;
+
+  document.getElementById('approval-pending').innerHTML = pending.length === 0
+    ? '<div style="text-align:center;padding:60px 20px;color:var(--gray)"><div style="font-size:48px;margin-bottom:12px">📭</div>暂无待审批记录</div>'
+    : pending.map(r => `<div class="approval-card">
+        <div class="approval-header"><span class="approval-name">${r.userName}</span><span class="record-status status-pending">待审批</span></div>
+        <div class="approval-task">${r.taskName}</div>
+        <div class="approval-meta">${r.date.getMonth()+1}/${r.date.getDate()}  ·  ${r.count}次  ·  <span class="approval-score">+${r.score}分</span></div>
+        <div class="approval-actions">
+          <button class="approval-btn btn-approve" onclick="approveRecord(${r.id})">✅ 通过</button>
+          <button class="approval-btn btn-reject" onclick="rejectRecord(${r.id})">❌ 驳回</button>
+        </div>
+      </div>`).join('');
+
+  document.getElementById('approval-done').innerHTML = done.length === 0
+    ? '<div style="text-align:center;padding:60px 20px;color:var(--gray)">暂无已审批记录</div>'
+    : done.map(r => {
+      const ok = r.status === 'approved';
+      return `<div class="record-item"><span style="font-size:18px">${ok?'✅':'❌'}</span><div style="flex:1;margin-left:10px"><div class="record-name">${r.userName} - ${r.taskName}</div>${r.rejectReason?'<div style="font-size:11px;color:var(--red)">原因: '+r.rejectReason+'</div>':''}</div><span class="record-score">+${r.score}分</span></div>`;
+    }).join('');
+}
+
+function switchApprovalTab(idx, el) {
+  document.querySelectorAll('#screen-approval .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('approval-pending').style.display = idx===0?'block':'none';
+  document.getElementById('approval-done').style.display = idx===1?'block':'none';
+}
+
+function approveRecord(id) {
+  const r = records.find(r => r.id === id);
+  if (r) { r.status = 'approved'; renderApproval(); showToast('✅ 已通过'); }
+}
+
+function rejectRecord(id) {
+  const r = records.find(r => r.id === id);
+  if (r) { r.status = 'rejected'; r.rejectReason = '不符合要求'; renderApproval(); showToast('❌ 已驳回'); }
+}
+
+// ===== STATISTICS =====
+function renderStatistics() {
+  document.getElementById('period-text').textContent = statYear + '年' + statMonth + '月';
+  renderPersonalStats();
+  renderTeamRanking();
+  renderTaskStats();
+}
+
+function changePeriod(d) {
+  statMonth += d;
+  if (statMonth > 12) { statMonth = 1; statYear++; }
+  if (statMonth < 1) { statMonth = 12; statYear--; }
+  renderStatistics();
+}
+
+function switchStatTab(idx, el) {
+  document.querySelectorAll('#screen-statistics .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('stat-personal').style.display = idx===0?'block':'none';
+  document.getElementById('stat-team').style.display = idx===1?'block':'none';
+  document.getElementById('stat-tasks').style.display = idx===2?'block':'none';
+}
+
+function renderPersonalStats() {
+  const my = records.filter(r => r.userId === currentUser.id && r.status === 'approved' && r.date.getFullYear()===statYear && r.date.getMonth()+1===statMonth);
+  const total = my.reduce((s,r) => s+r.score, 0);
+  const daysInMonth = new Date(statYear, statMonth, 0).getDate();
+  const daily = {};
+  my.forEach(r => { const d = r.date.getDate(); daily[d] = (daily[d]||0) + r.score; });
+  const maxDay = Math.max(...Object.values(daily), 1);
+
+  document.getElementById('stat-personal').innerHTML = `
+    <div class="stat-summary">
+      <div class="stat-item"><div class="stat-item-value">${total}</div><div class="stat-item-label">本月积分</div></div>
+      <div class="stat-item"><div class="stat-item-value">${my.length}</div><div class="stat-item-label">申报次数</div></div>
+      <div class="stat-item"><div class="stat-item-value">${(total/daysInMonth).toFixed(1)}</div><div class="stat-item-label">日均积分</div></div>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title">📈 每日积分趋势</div>
+      <div class="bar-chart">${Object.entries(daily).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([day,score]) =>
+        `<div class="bar-row"><div class="bar-label">${day}日</div><div class="bar-track"><div class="bar-fill" style="width:${(score/maxDay*100).toFixed(0)}%;background:var(--primary)"></div></div><div class="bar-value">${score}分</div></div>`
+      ).join('') || '<div style="text-align:center;padding:40px;color:#BDBDBD">暂无数据</div>'}</div>
+    </div>
+    <div class="section-title" style="margin-top:8px">📋 申报记录</div>
+    ${my.sort((a,b)=>b.date-a.date).map(r => `<div class="record-item"><div><div class="record-name">${r.taskName}</div><div class="record-date">${r.date.getMonth()+1}/${r.date.getDate()} ✅</div></div><span class="record-score">+${r.score}分</span></div>`).join('') || '<div style="text-align:center;padding:30px;color:#BDBDBD">暂无记录</div>'}
+  `;
+}
+
+function renderTeamRanking() {
+  const scores = {};
+  records.filter(r => r.status==='approved' && r.date.getFullYear()===statYear && r.date.getMonth()+1===statMonth).forEach(r => { scores[r.userName] = (scores[r.userName]||0) + r.score; });
+  const ranking = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  const max = ranking.length > 0 ? ranking[0][1] : 1;
+
+  document.getElementById('stat-team').innerHTML = `
+    <div class="section-title" style="padding:16px 16px 12px">🏆 团队积分排行榜</div>
+    ${ranking.map((e,i) => {
+      const mc = i===0?'#FF8F00':i===1?'#78909C':i===2?'#8D6E63':'#B2DFDB';
+      const w = (e[1]/max*100).toFixed(0);
+      return `<div style="padding:6px 16px"><div class="bar-row"><div class="ranking-medal" style="background:${mc};width:28px;height:28px;font-size:12px;flex-shrink:0">${i+1}</div><div class="bar-label" style="width:60px;text-align:left;font-size:13px;font-weight:500">${e[0]}</div><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${i<3?'var(--primary)':'var(--light)'}"></div></div><div class="bar-value">${e[1]}分</div></div></div>`;
+    }).join('') || '<div style="text-align:center;padding:60px;color:#BDBDBD">暂无数据</div>'}
+  `;
+}
+
+function renderTaskStats() {
+  const stats = {};
+  records.filter(r => r.status==='approved' && r.date.getFullYear()===statYear && r.date.getMonth()+1===statMonth).forEach(r => { stats[r.taskName] = (stats[r.taskName]||0) + r.count; });
+  const sorted = Object.entries(stats).sort((a,b) => b[1]-a[1]);
+
+  document.getElementById('stat-tasks').innerHTML = `
+    <div class="section-title" style="padding:16px 16px 12px">📊 作业完成统计</div>
+    ${sorted.map(e => `<div class="record-item"><div class="record-name" style="flex:1">${e[0]}</div><span class="record-status status-approved">${e[1]}次</span></div>`).join('') || '<div style="text-align:center;padding:60px;color:#BDBDBD">暂无数据</div>'}
+  `;
+}
+
+// ===== QUERY =====
+// ===== QUERY (Module-style, same as submit) =====
+let queryOpenModules = new Set();
+let queryOpenCategories = new Set();
+
+function renderQuery() {
+  const data = getModuleData();
+  const grid = document.getElementById('query-module-grid');
+  grid.innerHTML = Object.entries(data).map(([mod, cats]) => {
+    const count = Object.values(cats).reduce((s, arr) => s + arr.length, 0);
+    const catCount = Object.keys(cats).length;
+    return `<div class="module-card" id="qmod-${mod}" onclick="toggleQueryModule('${mod}')">
+      <div class="module-card-check">✓</div>
+      <div class="module-card-icon">${MODULE_ICONS[mod]||'📋'}</div>
+      <div class="module-card-name">${mod}</div>
+      <div class="module-card-count">${catCount}类 · ${count}项</div>
+    </div>`;
+  }).join('');
+  document.getElementById('query-results-count').textContent = '';
+  document.getElementById('query-category-list').innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--gray);font-size:13px;">👆 请选择上方的作业模块查看标准</div>';
+}
+
+function toggleQueryModule(mod) {
+  if (queryOpenModules.has(mod)) queryOpenModules.delete(mod);
+  else queryOpenModules.add(mod);
+  renderQueryCategories();
+  document.querySelectorAll('#query-module-grid .module-card').forEach(el => el.classList.remove('selected'));
+  queryOpenModules.forEach(m => { const el = document.getElementById('qmod-' + m); if (el) el.classList.add('selected'); });
+}
+
+function renderQueryCategories() {
+  const data = getModuleData();
+  const container = document.getElementById('query-category-list');
+  let html = '';
+  let totalCount = 0;
+
+  queryOpenModules.forEach(mod => {
+    const cats = data[mod];
+    if (!cats) return;
+    Object.entries(cats).forEach(([cat, tasks]) => {
+      totalCount += tasks.length;
+      const isOpen = queryOpenCategories.has('q_' + mod + '|' + cat);
+      html += `<div class="category-section">
+        <div class="category-header" onclick="toggleQueryCategory('${mod}','${cat}')">
+          <div style="display:flex;align-items:center;">
+            <span class="category-name">${cat}</span>
+            <span class="category-count">${tasks.length}项</span>
+          </div>
+          <span class="category-arrow ${isOpen?'open':''}">›</span>
+        </div>
+        <div class="task-check-list ${isOpen?'open':''}">
+          ${tasks.map(t => `<div class="task-check-item" style="cursor:default;">
+            <div style="width:20px;height:20px;border-radius:6px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--primary);font-weight:700;flex-shrink:0;">${t.score}</div>
+            <div class="task-check-info">
+              <div class="task-check-name">${t.content}</div>
+              <div style="font-size:10px;color:var(--gray);margin-top:1px;">${t.module} > ${t.category} · ${t.unit}</div>
+            </div>
+            <div class="task-check-score">${t.score}分</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('query-results-count').textContent = queryOpenModules.size > 0 ? `共 ${totalCount} 项作业标准` : '';
+  container.innerHTML = html || '<div style="text-align:center;padding:30px 0;color:var(--gray);font-size:13px;">👆 请选择上方的作业模块查看标准</div>';
+}
+
+function toggleQueryCategory(mod, cat) {
+  const key = 'q_' + mod + '|' + cat;
+  if (queryOpenCategories.has(key)) queryOpenCategories.delete(key);
+  else queryOpenCategories.add(key);
+  renderQueryCategories();
+}
+
+// ===== MY RECORDS =====
+let myRecYear = 2026, myRecMonth = 4, myRecFilter = 'all';
+
+function changeMyRecPeriod(d) {
+  myRecMonth += d;
+  if (myRecMonth > 12) { myRecMonth = 1; myRecYear++; }
+  if (myRecMonth < 1) { myRecMonth = 12; myRecYear--; }
+  renderMyRecords();
+}
+
+function switchMyRecTab(tab) {
+  myRecFilter = tab;
+  ['all','pending','approved','rejected'].forEach(t => {
+    document.getElementById('myrec-tab-' + t).classList.toggle('active', t === tab);
+  });
+  renderMyRecords();
+}
+
+function renderMyRecords() {
+  document.getElementById('my-rec-period').textContent = myRecYear + '年' + myRecMonth + '月';
+  const isAdmin = currentUser && isAdminRole(currentUser.role);
+  document.getElementById('my-records-title').textContent = isAdmin ? '全部人员记录' : '我的记录';
+
+  let list = records.filter(r => r.date.getFullYear() === myRecYear && r.date.getMonth() + 1 === myRecMonth);
+  if (!isAdmin) list = list.filter(r => r.userId === currentUser.id);
+  if (myRecFilter !== 'all') list = list.filter(r => r.status === myRecFilter);
+  list.sort((a, b) => b.date - a.date);
+
+  document.getElementById('my-rec-count').textContent = `共 ${list.length} 条记录`;
+  document.getElementById('my-records-list').innerHTML = list.length === 0
+    ? '<div style="text-align:center;padding:40px;color:var(--gray)">暂无记录</div>'
+    : list.map(r => {
+      const sc = r.status==='approved'?'status-approved':r.status==='rejected'?'status-rejected':'status-pending';
+      const st = r.status==='approved'?'已通过':r.status==='rejected'?'已驳回':'待审批';
+      return `<div class="admin-card" style="flex-wrap:wrap;padding:12px 14px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">👤</div>
+        <div class="admin-card-info" style="min-width:0;">
+          <div class="admin-card-title" style="font-size:13px;">${r.userName} · ${r.taskName}</div>
+          <div class="admin-card-sub">${r.date.getMonth()+1}/${r.date.getDate()} · ${r.count}次 · <span style="color:var(--primary);font-weight:700;">+${r.score}分</span> · <span class="record-status ${sc}" style="font-size:10px;">${st}</span></div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ===== ALL RECORDS MANAGEMENT (ADMIN) =====
+let allRecYear = 2026, allRecMonth = 4, allRecFilter = 'all';
+
+function changeAllRecPeriod(d) {
+  allRecMonth += d;
+  if (allRecMonth > 12) { allRecMonth = 1; allRecYear++; }
+  if (allRecMonth < 1) { allRecMonth = 12; allRecYear--; }
+  renderAllRecords();
+}
+
+function switchAllRecTab(tab) {
+  allRecFilter = tab;
+  ['all','pending','approved','rejected'].forEach(t => {
+    document.getElementById('allrec-tab-' + t).classList.toggle('active', t === tab);
+  });
+  renderAllRecords();
+}
+
+function renderAllRecords() {
+  document.getElementById('all-rec-period').textContent = allRecYear + '年' + allRecMonth + '月';
+  const q = (document.getElementById('allrec-search').value || '').toLowerCase();
+  let list = records.filter(r => r.date.getFullYear() === allRecYear && r.date.getMonth() + 1 === allRecMonth);
+  if (allRecFilter !== 'all') list = list.filter(r => r.status === allRecFilter);
+  if (q) list = list.filter(r => r.userName.toLowerCase().includes(q) || r.taskName.toLowerCase().includes(q));
+  list.sort((a, b) => b.date - a.date);
+
+  document.getElementById('all-rec-count').textContent = `共 ${list.length} 条记录`;
+  document.getElementById('all-records-list').innerHTML = list.length === 0
+    ? '<div style="text-align:center;padding:40px;color:var(--gray)">暂无数据</div>'
+    : list.map(r => {
+      const sc = r.status==='approved'?'status-approved':r.status==='rejected'?'status-rejected':'status-pending';
+      const st = r.status==='approved'?'已通过':r.status==='rejected'?'已驳回':'待审批';
+      return `<div class="admin-card" style="flex-wrap:wrap;padding:12px 14px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">👤</div>
+        <div class="admin-card-info" style="min-width:0;">
+          <div class="admin-card-title" style="font-size:13px;">${r.userName} · ${r.taskName}</div>
+          <div class="admin-card-sub">${r.date.getMonth()+1}/${r.date.getDate()} · ${r.count}次 · <span style="color:var(--primary);font-weight:700;">+${r.score}分</span> · <span class="record-status ${sc}" style="font-size:10px;">${st}</span></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="admin-action-btn btn-edit" onclick="editRecord(${r.id})">修改</button>
+          ${r.status==='pending'?`<button class="admin-action-btn btn-primary" onclick="quickApprove(${r.id})">通过</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function editRecord(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  const statusMap = {'approved':'已通过','pending':'待审批','rejected':'已驳回'};
+  popupInput('修改积分记录', [
+    {label:'作业名称', value: r.taskName},
+    {label:'次数', value: String(r.count), type:'number'},
+    {label:'积分', value: String(r.score), type:'number'},
+    {label:'状态', value: statusMap[r.status] || r.status, type:'select', options:['已通过','待审批','已驳回']}
+  ], (vals) => {
+    const count = parseInt(vals[1]);
+    const score = parseFloat(vals[2]);
+    if (isNaN(count) || count <= 0) { showToast('❌ 请输入有效次数'); return; }
+    if (isNaN(score) || score <= 0) { showToast('❌ 请输入有效积分'); return; }
+    r.taskName = vals[0]; r.count = count; r.score = score;
+    const reverseMap = {'已通过':'approved','待审批':'pending','已驳回':'rejected'};
+    if (reverseMap[vals[3]]) r.status = reverseMap[vals[3]];
+    showToast(`✅ 已修改「${r.userName}」的记录`);
+    renderAllRecords();
+  });
+}
+
+function quickApprove(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  r.status = 'approved';
+  showToast(`✅ 已通过「${r.userName}」的申报`);
+  renderAllRecords();
+}
+
+// ===== PROFILE =====
+function renderProfile() {
+  if (!currentUser) return;
+  document.getElementById('profile-name').textContent = currentUser.name;
+  document.getElementById('profile-role').textContent = roleNames[currentUser.role] || '普通员工';
+  const myApproved = records.filter(r => r.userId === currentUser.id && r.status === 'approved');
+  document.getElementById('profile-score').textContent = myApproved.reduce((s,r)=>s+r.score,0);
+  document.getElementById('profile-records').textContent = records.filter(r => r.userId === currentUser.id).length;
+  // Show/hide admin menu - superadmin/admin/manager 都可以看到
+  document.getElementById('admin-menu').style.display = isAdminRole(currentUser.role) ? 'block' : 'none';
+}
+
+// ===== USER MANAGEMENT =====
+let userDisabled = new Set();
+
+function renderUsers() {
+  const q = (document.getElementById('user-search').value || '').toLowerCase();
+  // 非 superadmin 看不到 superadmin 用户
+  const list = USERS.filter(u => {
+    if (isSuperAdmin(u.role) && !isSuperAdmin(currentUser.role)) return false;
+    if (!q || u.name.toLowerCase().includes(q)) return true;
+    return false;
+  });
+  document.getElementById('user-list').innerHTML = list.map(u => {
+    const disabled = userDisabled.has(u.id);
+    const score = records.filter(r => r.userId === u.id && r.status === 'approved').reduce((s,r) => s+r.score, 0);
+    const roleIcon = u.role==='superadmin'?'🔧':u.role==='admin'?'👑':u.role==='manager'?'🛡️':'';
+    // 非 superadmin 不能编辑/禁用管理员
+    const canEdit = isSuperAdmin(currentUser.role) || !isAdminRole(u.role);
+    return `<div class="admin-card">
+      <div style="width:40px;height:40px;border-radius:50%;background:${disabled?'var(--lightGray)':'var(--light)'};display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>
+      <div class="admin-card-info">
+        <div class="admin-card-title">${u.name} ${roleIcon}</div>
+        <div class="admin-card-sub">${roleNames[u.role]||'普通员工'} · 账号：${u.account||u.name} · ${score}积分</div>
+      </div>
+      <div class="admin-card-right">
+        <span class="admin-badge ${disabled?'badge-disabled':'badge-active'}">${disabled?'已禁用':'正常'}</span>
+        <div style="margin-top:6px;display:flex;gap:6px;">
+          ${canEdit ? `<button class="admin-action-btn btn-edit" onclick="editUser(${u.id})">编辑</button>
+          <button class="admin-action-btn ${disabled?'btn-primary':'btn-danger'}" onclick="toggleUserStatus(${u.id})">${disabled?'启用':'禁用'}</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleUserStatus(id) {
+  if (userDisabled.has(id)) { userDisabled.delete(id); showToast('✅ 用户已启用'); }
+  else { userDisabled.add(id); showToast('❌ 用户已禁用'); }
+  renderUsers();
+}
+
+let editingUserId = null;
+let editRole = 'employee';
+
+function editUser(id) {
+  const u = USERS.find(x => x.id === id);
+  if (!u) return;
+  editingUserId = id;
+  editRole = u.role || 'employee';
+  document.getElementById('edit-user-name').value = u.name || '';
+  document.getElementById('edit-user-account').value = u.account || '';
+  document.getElementById('edit-user-pwd').value = '';
+  document.getElementById('user-edit-title').textContent = '编辑用户 - ' + u.name;
+  // 根据当前用户权限显示可选角色
+  const roleGroup = document.getElementById('edit-role-group');
+  let roleHTML = '<div class="chip" data-role="employee" onclick="selectEditRole(\'employee\')">普通员工</div>';
+  if (canManageAdmins(currentUser.role)) {
+    roleHTML += '<div class="chip" data-role="manager" onclick="selectEditRole(\'manager\')">部门管理员</div>';
+    roleHTML += '<div class="chip" data-role="admin" onclick="selectEditRole(\'admin\')">系统管理员</div>';
+  }
+  roleGroup.innerHTML = roleHTML;
+  // 高亮当前角色
+  roleGroup.querySelectorAll('.chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.role === editRole);
+  });
+  // 显示弹窗
+  document.getElementById('user-edit-overlay').classList.add('show');
+  document.getElementById('user-edit-sheet').classList.add('show');
+}
+
+function selectEditRole(role) {
+  editRole = role;
+  document.querySelectorAll('#edit-role-group .chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.role === role);
+  });
+}
+
+function closeUserEditModal() {
+  document.getElementById('user-edit-overlay').classList.remove('show');
+  document.getElementById('user-edit-sheet').classList.remove('show');
+  editingUserId = null;
+}
+
+function saveUserEdit() {
+  const u = USERS.find(x => x.id === editingUserId);
+  if (!u) return;
+  const name = document.getElementById('edit-user-name').value.trim();
+  const account = document.getElementById('edit-user-account').value.trim();
+  const pwd = document.getElementById('edit-user-pwd').value.trim();
+  if (!name) { showToast('⚠️ 姓名不能为空'); return; }
+  if (!account) { showToast('⚠️ 账号不能为空'); return; }
+  // 检查账号是否与其他用户重复
+  const dup = USERS.find(x => x.id !== editingUserId && x.account === account);
+  if (dup) { showToast('⚠️ 账号已存在，请使用其他账号'); return; }
+  u.name = name;
+  u.account = account;
+  if (pwd) u.pwd = pwd;
+  u.role = editRole;
+  saveUsers();
+  showToast(`✅ ${name} 信息已更新`);
+  closeUserEditModal();
+  renderUsers();
+}
+
+function showUserForm() {
+  popupInput('新增用户', [
+    {label:'姓名', placeholder:'请输入姓名'},
+    {label:'账号', placeholder:'请输入账号'},
+    {label:'密码', placeholder:'请输入密码（可留空）', optional:true}
+  ], (vals) => {
+    const dup = USERS.find(u => u.account === vals[1]);
+    if (dup) { showToast('⚠️ 账号已存在'); return; }
+    const newId = Math.max(...USERS.map(u => u.id)) + 1;
+    USERS.push({id: newId, name: vals[0], role: 'employee', pwd: vals[2], account: vals[1]});
+    saveUsers();
+    showToast(`✅ 已添加用户：${vals[0]}（账号：${vals[1]}）`);
+    renderUsers();
+  });
+}
+
+// ===== STANDARD MANAGEMENT =====
+let stdMgmtModule = '全部';
+
+function renderStandardsMgmt() {
+  const modules = ['全部', ...new Set(STANDARDS.map(s => s.module))];
+  document.getElementById('std-mgmt-chips').innerHTML = modules.map(m =>
+    `<div class="chip ${m===stdMgmtModule?'active':''}" onclick="stdMgmtModule='${m}';renderStandardsMgmt()">${m}</div>`
+  ).join('');
+
+  const q = (document.getElementById('std-search').value || '').toLowerCase();
+  let list = STANDARDS;
+  if (stdMgmtModule !== '全部') list = list.filter(s => s.module === stdMgmtModule);
+  if (q) list = list.filter(s => s.content.toLowerCase().includes(q) || s.category.toLowerCase().includes(q));
+
+  document.getElementById('std-mgmt-list').innerHTML = list.map((s, i) =>
+    `<div class="admin-card" style="flex-wrap:wrap;">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${MODULE_ICONS[s.module]||'📋'}</div>
+      <div class="admin-card-info">
+        <div class="admin-card-title">${s.content}</div>
+        <div class="admin-card-sub">${s.module} > ${s.category} · ${s.unit} · ${s.score}分/次</div>
+      </div>
+      <div class="admin-card-right">
+        <div style="display:flex;gap:6px;">
+          <button class="admin-action-btn btn-edit" onclick="editStandard(${s.id})">编辑</button>
+          <button class="admin-action-btn btn-danger" onclick="deleteStandard(${s.id})">删除</button>
+        </div>
+      </div>
+    </div>`
+  ).join('') || '<div style="text-align:center;padding:40px;color:var(--gray)">暂无数据</div>';
+}
+
+function editStandard(id) {
+  const s = STANDARDS.find(x => x.id === id);
+  if (!s) return;
+  popupInput('编辑作业标准', [
+    {label:'作业内容', value: s.content},
+    {label:'所属模块', value: s.module, placeholder:'计划修作业/配合作业/日常运作/故障处理/专项工作/模块工作'},
+    {label:'子类别', value: s.category},
+    {label:'计分单位', value: s.unit},
+    {label:'积分分值', value: String(s.score), type:'number'}
+  ], (vals) => {
+    const score = parseFloat(vals[4]);
+    if (isNaN(score) || score <= 0) { showToast('❌ 请输入有效分数'); return; }
+    s.content = vals[0]; s.module = vals[1]; s.category = vals[2]; s.unit = vals[3]; s.score = score;
+    showToast(`✅「${vals[0]}」已更新`);
+    renderStandardsMgmt();
+  });
+}
+
+function deleteStandard(id) {
+  const s = STANDARDS.find(x => x.id === id);
+  if (!s) return;
+  popupConfirm('删除确认', `确定删除「${s.content}」？此操作不可恢复。`, () => {
+    const idx = STANDARDS.indexOf(s);
+    STANDARDS.splice(idx, 1);
+    showToast(`🗑️ 已删除「${s.content}」`);
+    renderStandardsMgmt();
+  }, true);
+}
+
+function showStdForm() {
+  popupInput('新增作业标准', [
+    {label:'作业内容', placeholder:'请输入作业内容'},
+    {label:'所属模块', value:'计划修作业', placeholder:'计划修作业/配合作业/日常运作/故障处理/专项工作/模块工作'},
+    {label:'子类别', value:'设备检修', placeholder:'请输入子类别'},
+    {label:'计分单位', value:'每次'},
+    {label:'积分分值', value:'3', type:'number'}
+  ], (vals) => {
+    const score = parseFloat(vals[4]);
+    if (isNaN(score) || score <= 0) { showToast('❌ 请输入有效分数'); return; }
+    const newId = Math.max(...STANDARDS.map(s => s.id), 0) + 1;
+    STANDARDS.push({id: newId, module: vals[1], category: vals[2], content: vals[0], unit: vals[3], score: score});
+    showToast(`✅ 已添加：${vals[0]}`);
+    renderStandardsMgmt();
+  });
+}
+
+// ===== EXPORT =====
+let exportYear = 2026, exportMonth = 4, exportFilter = 'all';
+
+function changeExportPeriod(d) {
+  exportMonth += d;
+  if (exportMonth > 12) { exportMonth = 1; exportYear++; }
+  if (exportMonth < 1) { exportMonth = 12; exportYear--; }
+  renderExport();
+}
+
+function switchExportTab(tab) {
+  exportFilter = tab;
+  ['all','approved','pending'].forEach(t => {
+    document.getElementById('export-tab-' + t).classList.toggle('active', t === tab);
+  });
+  renderExport();
+}
+
+function renderExport() {
+  document.getElementById('export-period-text').textContent = exportYear + '年' + exportMonth + '月';
+  let list = records.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
+  if (exportFilter !== 'all') list = list.filter(r => r.status === exportFilter);
+  list.sort((a, b) => b.date - a.date);
+
+  document.getElementById('export-count').textContent = `共 ${list.length} 条记录`;
+  document.getElementById('export-table-wrap').innerHTML = list.length === 0
+    ? '<div style="text-align:center;padding:40px;color:var(--gray)">暂无数据</div>'
+    : `<table class="export-table"><thead><tr><th>姓名</th><th>作业</th><th>日期</th><th>次数</th><th>积分</th><th>状态</th></tr></thead><tbody>${list.map(r => {
+      const st = r.status==='approved'?'✅通过':r.status==='rejected'?'❌驳回':'⏳待审';
+      return `<tr><td>${r.userName}</td><td>${r.taskName}</td><td>${r.date.getMonth()+1}/${r.date.getDate()}</td><td>${r.count}</td><td>${r.score}</td><td>${st}</td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function doExport() {
+  let list = records.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
+  if (exportFilter !== 'all') list = list.filter(r => r.status === exportFilter);
+  if (list.length === 0) { showToast('❌ 没有可导出的数据'); return; }
+
+  const fileName = `积分报表_${exportYear}年${exportMonth}月`;
+
+  // 生成 CSV 内容
+  let csv = '\uFEFF姓名,作业名称,日期,次数,积分,状态\n';
+  list.forEach(r => {
+    const st = r.status==='approved'?'已通过':r.status==='rejected'?'已驳回':'待审批';
+    csv += `${r.userName},${r.taskName},${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}-${String(r.date.getDate()).padStart(2,'0')},${r.count},${r.score},${st}\n`;
+  });
+
+  // 在 WebView 中通过创建 Blob 下载
+  try {
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`📥 已导出 ${list.length} 条记录（CSV格式）`);
+  } catch(e) {
+    // 如果下载失败，显示内容供手动复制
+    popupAlert('导出结果', `<div style="max-height:200px;overflow:auto;font-size:11px;background:#f5f5f5;padding:8px;border-radius:8px;white-space:pre;margin-bottom:8px;">${csv}</div><div style="font-size:11px;color:var(--gray);">共 ${list.length} 条记录 · 请长按上方内容复制</div>`);
+  }
+}
+
+function doExportExcel() {
+  let list = records.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
+  if (exportFilter !== 'all') list = list.filter(r => r.status === exportFilter);
+  if (list.length === 0) { showToast('❌ 没有可导出的数据'); return; }
+
+  // 生成简易 HTML 表格（可用 Excel 打开）
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><tr><th>姓名</th><th>作业名称</th><th>日期</th><th>次数</th><th>积分</th><th>状态</th></tr>`;
+  list.forEach(r => {
+    const st = r.status==='approved'?'已通过':r.status==='rejected'?'已驳回':'待审批';
+    html += `<tr><td>${r.userName}</td><td>${r.taskName}</td><td>${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}-${String(r.date.getDate()).padStart(2,'0')}</td><td>${r.count}</td><td>${r.score}</td><td>${st}</td></tr>`;
+  });
+  html += '</table></body></html>';
+
+  try {
+    const blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `积分报表_${exportYear}年${exportMonth}月.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`📥 已导出 ${list.length} 条记录（Excel格式）`);
+  } catch(e) {
+    showToast('⚠️ 导出失败，请尝试CSV格式');
+  }
+}
+
+// ===== BACKUP =====
+function renderBackup() {
+  document.getElementById('backup-info').textContent = `共 ${USERS.length} 个用户 · ${records.length} 条积分记录`;
+}
+
+function doBackup() {
+  const data = { users: USERS, standards: STANDARDS, records: records, backupTime: new Date().toISOString() };
+  const json = JSON.stringify(data, null, 2);
+  try {
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `积分系统备份_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ 备份文件已下载到「下载」文件夹');
+  } catch(e) {
+    // 备用方案：显示 JSON 供复制
+    popupAlert('备份数据', `<div style="font-size:11px;color:var(--gray);margin-bottom:8px;">请长按下方内容全选复制，保存为 .json 文件</div><div style="max-height:200px;overflow:auto;font-size:10px;background:#f5f5f5;padding:8px;border-radius:8px;white-space:pre-wrap;word-break:break-all;">${json}</div>`);
+  }
+}
+
+function doRestore() {
+  // 创建文件选择器
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) { document.body.removeChild(input); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.users && data.records) {
+          // 恢复数据
+          USERS.length = 0;
+          data.users.forEach(u => USERS.push(u));
+          records.length = 0;
+          data.records.forEach(r => {
+            r.date = new Date(r.date);
+            records.push(r);
+          });
+          if (data.standards) {
+            STANDARDS.length = 0;
+            data.standards.forEach(s => STANDARDS.push(s));
+          }
+          showToast(`✅ 恢复成功：${data.users.length} 用户 · ${data.records.length} 记录`);
+          // 刷新所有页面数据
+          renderHome();
+          renderUsers();
+          renderStandardsMgmt();
+          renderBackup();
+        } else {
+          showToast('❌ 备份文件格式不正确');
+        }
+      } catch (err) {
+        showToast('❌ 文件解析失败：' + err.message);
+      }
+      document.body.removeChild(input);
+    };
+    reader.readAsText(file);
+  };
+
+  try {
+    input.click();
+  } catch(e) {
+    document.body.removeChild(input);
+    showToast('⚠️ 当前环境不支持文件选择，请在浏览器中使用');
+  }
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== 通用弹窗（替代 prompt/confirm）=====
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+  // 清空弹窗内容，防止隐藏的元素阻挡交互
+  document.getElementById('popup-box').innerHTML = '';
+}
+
+function popupConfirm(title, msg, onConfirm, danger) {
+  const box = document.getElementById('popup-box');
+  box.innerHTML = `
+    <div class="popup-title">${title}</div>
+    <div class="popup-msg">${msg}</div>
+    <div class="popup-btns">
+      <button class="popup-btn-cancel" onclick="closePopup()">取消</button>
+      <button class="${danger?'popup-btn-danger':'popup-btn-confirm'}" id="popup-confirm-btn">确定</button>
+    </div>`;
+  document.getElementById('popup-confirm-btn').onclick = () => { closePopup(); onConfirm(); };
+  document.getElementById('popup-overlay').classList.add('show');
+}
+
+function popupInput(title, fields, onConfirm) {
+  // fields: [{label, placeholder, value, type, options}]
+  // type: 'text'|'number'|'password'|'select'
+  // options: ['选项1','选项2'] (仅 select 类型)
+  const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const box = document.getElementById('popup-box');
+  box.innerHTML = `
+    <div class="popup-title">${esc(title)}</div>
+    ${fields.map((f,i) => {
+      if (f.type === 'select' && f.options) {
+        return `
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:2px;">${esc(f.label)}</label>
+          <select class="popup-input" id="popup-input-${i}" style="appearance:auto;">
+            ${f.options.map(o => `<option value="${esc(o)}" ${o===f.value?'selected':''}>${esc(o)}</option>`).join('')}
+          </select>`;
+      }
+      return `
+        <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:2px;">${esc(f.label)}</label>
+        <input class="popup-input" id="popup-input-${i}" type="${esc(f.type)||'text'}" placeholder="${esc(f.placeholder)}" value="${esc(f.value)}" />`;
+    }).join('')}
+    <div class="popup-btns">
+      <button class="popup-btn-cancel" onclick="closePopup()">取消</button>
+      <button class="popup-btn-confirm" id="popup-confirm-btn">确定</button>
+    </div>`;
+  document.getElementById('popup-confirm-btn').onclick = () => {
+    const vals = fields.map((f,i) => document.getElementById('popup-input-'+i).value.trim());
+    if (vals.some((v,idx) => v === '' && !fields[idx].optional)) { showToast('⚠️ 请填写完整信息'); return; }
+    closePopup();
+    onConfirm(vals);
+  };
+  document.getElementById('popup-overlay').classList.add('show');
+  setTimeout(() => { const first = document.getElementById('popup-input-0'); if(first) first.focus(); }, 100);
+}
+
+function popupAlert(title, msg) {
+  const box = document.getElementById('popup-box');
+  box.innerHTML = `
+    <div class="popup-title">${title}</div>
+    <div class="popup-msg">${msg}</div>
+    <div class="popup-btns">
+      <button class="popup-btn-confirm" onclick="closePopup()" style="flex:1;">知道了</button>
+    </div>`;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+
+// ===== MODAL =====
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  document.getElementById('modal-sheet').classList.remove('show');
+}
+
+// ===== SETTINGS FUNCTIONS =====
+let appSettings = {
+  notifyApprove: true,
+  notifyResult: true,
+  notifyScore: false,
+  statPeriod: '自然月',
+  rankCount: '全部'
+};
+
+// 操作日志
+let operationLogs = [];
+
+function addLog(action) {
+  operationLogs.unshift({time: new Date().toLocaleString(), user: currentUser ? currentUser.name : '系统', action: action});
+  if (operationLogs.length > 100) operationLogs.length = 100;
+}
+
+function toggleSetting(el, name) {
+  el.classList.toggle('on');
+  const isOn = el.classList.contains('on');
+  showToast(isOn ? `✅ 已开启${name}` : `❌ 已关闭${name}`);
+  addLog(`${isOn?'开启':'关闭'}${name}`);
+}
+
+function changeStatPeriod() {
+  const periods = ['自然月', '自然周', '自然季度', '自定义'];
+  const current = appSettings.statPeriod;
+  const options = periods.map(p => ({label: p, desc: p === current ? '✓ 当前' : ''}));
+  // 简单用弹窗选择
+  popupInput('统计周期', [
+    {label:'选择周期', value: current, placeholder: '自然月/自然周/自然季度/自定义'}
+  ], (vals) => {
+    if (['自然月','自然周','自然季度','自定义'].includes(vals[0])) {
+      appSettings.statPeriod = vals[0];
+      document.getElementById('set-stat-period').textContent = vals[0] + ' ›';
+      showToast(`✅ 统计周期已设为「${vals[0]}」`);
+      addLog(`修改统计周期为${vals[0]}`);
+    } else {
+      showToast('⚠️ 请输入有效周期');
+    }
+  });
+}
+
+function changeRankCount() {
+  popupInput('排名显示人数', [
+    {label:'显示人数（输入0显示全部）', value: appSettings.rankCount === '全部' ? '0' : appSettings.rankCount, type:'number'}
+  ], (vals) => {
+    const n = parseInt(vals[0]);
+    appSettings.rankCount = (n === 0 || isNaN(n)) ? '全部' : String(n);
+    document.getElementById('set-rank-count').textContent = appSettings.rankCount + ' ›';
+    showToast(`✅ 排名显示人数已设为「${appSettings.rankCount}」`);
+    addLog(`修改排名显示人数为${appSettings.rankCount}`);
+  });
+}
+
+function changePassword() {
+  if (!currentUser) return;
+  const hasPwd = currentUser.pwd && currentUser.pwd.length > 0;
+  popupInput('修改密码', [
+    {label: hasPwd ? '当前密码' : '当前密码（无需输入）', type:'password', optional: !hasPwd},
+    {label:'新密码（至少4位）', type:'password'},
+    {label:'确认新密码', type:'password'}
+  ], (vals) => {
+    if (hasPwd && vals[0] !== currentUser.pwd) { showToast('❌ 当前密码错误'); return; }
+    if (vals[1].length < 4) { showToast('❌ 新密码至少4位'); return; }
+    if (vals[1] !== vals[2]) { showToast('❌ 两次密码不一致'); return; }
+    currentUser.pwd = vals[1];
+    saveUsers();
+    showToast('✅ 密码修改成功');
+    addLog('修改密码');
+  });
+}
+
+function showOperationLog() {
+  if (operationLogs.length === 0) {
+    popupAlert('操作日志', '<div style="text-align:center;color:var(--gray);padding:20px;">暂无操作记录</div>');
+    return;
+  }
+  const logHtml = operationLogs.slice(0, 20).map(l =>
+    `<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:12px;">
+      <span style="color:var(--gray);">${l.time}</span>
+      <span style="color:var(--primary);font-weight:600;margin-left:8px;">${l.user}</span>
+      <span style="margin-left:8px;">${l.action}</span>
+    </div>`
+  ).join('');
+  popupAlert('操作日志（最近20条）', `<div style="max-height:300px;overflow:auto;">${logHtml}</div>`);
+}
+
+function clearAllData() {
+  popupConfirm('⚠️ 危险操作', '确定要清除所有积分记录吗？此操作不可恢复！<br><br>（用户数据和标准不会被删除）', () => {
+    records.length = 0;
+    nextId = 100;
+    showToast('✅ 所有积分记录已清除');
+    addLog('清除所有积分记录');
+  }, true);
+}
+
+// ===== 交互优化功能 =====
+
+// 退出确认（双击返回）
+let lastBackTime = 0;
+function showExitConfirm() {
+  const now = Date.now();
+  if (now - lastBackTime < 2000) {
+    // 真正退出（在APP中关闭WebView）
+    document.getElementById('exit-confirm').classList.remove('show');
+    try { Android && Android.closeApp(); } catch(e) {
+      showToast('👋 再见！');
+    }
+    return;
+  }
+  lastBackTime = now;
+  const el = document.getElementById('exit-confirm');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// 加载动画
+function showLoading(text) {
+  const overlay = document.getElementById('loading-overlay');
+  if (text) overlay.querySelector('.loading-text').textContent = text;
+  overlay.classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('show');
+}
+
+// 水波纹效果
+function createRipple(e) {
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+  el.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+}
+
+// 侧滑返回手势
+let touchStartX = 0, touchStartY = 0, touchCurrentX = 0, isSwiping = false;
+document.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchCurrentX = touchStartX;
+  isSwiping = false;
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  touchCurrentX = e.touches[0].clientX;
+  const diffX = touchCurrentX - touchStartX;
+  const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+
+  // 只在左侧30px区域触发，且水平滑动大于垂直滑动
+  if (touchStartX < 40 && diffX > 20 && diffX > diffY) {
+    isSwiping = true;
+    const indicator = document.getElementById('swipe-indicator');
+    const progress = Math.min(diffX / 100, 1);
+    indicator.style.transform = `scaleY(${progress})`;
+    indicator.classList.toggle('active', progress > 0.3);
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  const indicator = document.getElementById('swipe-indicator');
+  const diffX = touchCurrentX - touchStartX;
+
+  if (isSwiping && diffX > 80) {
+    // 触发返回
+    indicator.classList.remove('active');
+    indicator.style.transform = 'scaleY(0)';
+    goBack();
+  } else {
+    indicator.classList.remove('active');
+    indicator.style.transform = 'scaleY(0)';
+  }
+  isSwiping = false;
+}, { passive: true });
+
+// 阻止 iOS 侧滑返回到桌面（在 WebView 中）
+document.addEventListener('touchmove', (e) => {
+  // 不阻止正常滚动
+}, { passive: true });
+
+// 全局水波纹绑定（延迟执行确保 DOM 就绪）
+function initRippleEffects() {
+  document.querySelectorAll('button, .menu-item, .quick-action, .chip').forEach(el => {
+    el.addEventListener('click', createRipple);
+  });
+}
+
+// 列表项入场动画辅助函数
+function addListAnimation(container) {
+  if (!container) return;
+  const items = container.querySelectorAll('.admin-card, .record-card, .record-item, .ranking-item');
+  items.forEach((item, i) => {
+    item.style.opacity = '0';
+    item.style.transform = 'translateX(20px)';
+    setTimeout(() => {
+      item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      item.style.opacity = '1';
+      item.style.transform = 'translateX(0)';
+    }, i * 40);
+  });
+}
+
+// ===== INIT =====
+initRecords();
+initSubmit();
+loadSavedLogin();
+
+// 延迟初始化交互效果
+setTimeout(() => {
+  initRippleEffects();
+}, 500);
+</script>
+</body>
+</html>
