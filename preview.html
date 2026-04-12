@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="计件积分管理">
+<meta name="theme-color" content="#1A73E8">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
 <title>计件积分管理 APP 预览</title>
 <style>
   :root {
@@ -67,12 +73,14 @@
   /* ===== LOGIN SCREEN ===== */
   .login-screen {
     background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     padding: 40px 30px;
+    padding-top: max(60px, env(safe-area-inset-top, 40px));
+    overflow-y: auto;
   }
-  .login-logo { font-size: 64px; margin-bottom: 16px; }
-  .login-title { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: 2px; }
-  .login-subtitle { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 6px; margin-bottom: 48px; }
+  .login-logo { font-size: 48px; margin-bottom: 12px; }
+  .login-title { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: 2px; }
+  .login-subtitle { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; margin-bottom: 32px; }
   .login-card {
     background: rgba(255,255,255,0.97); border-radius: 20px;
     padding: 28px 24px; width: 100%;
@@ -995,7 +1003,7 @@
       <div class="menu-list">
         <div class="menu-item">
           <div class="menu-icon">ℹ️</div>
-          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.3.0</div></div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.4.1</div></div>
           <span class="menu-arrow">›</span>
         </div>
       </div>
@@ -1267,10 +1275,10 @@
 
 <script>
 // ===== 版本管理 =====
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.1';
 const VERSION_KEY = 'app_html_version';
 // HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
-// HTML_VERSION_CHECK:1.3.0
+// HTML_VERSION_CHECK:1.4.0
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -1403,7 +1411,12 @@ async function cloudLoad() {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     cloudDataSha = data.sha;
-    const content = JSON.parse(atob(data.content));
+    // UTF-8 安全的 base64 解码
+    const binaryStr = atob(data.content);
+    const uint8 = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) uint8[i] = binaryStr.charCodeAt(i);
+    const jsonStr = new TextDecoder().decode(uint8);
+    const content = JSON.parse(jsonStr);
     return content;
   } catch(e) {
     console.warn('云端加载失败，使用本地缓存:', e);
@@ -1416,9 +1429,36 @@ async function cloudSave() {
   if (cloudSyncing) return;
   cloudSyncing = true;
   try {
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify({
-      users: USERS, records: records, nextId: nextId, version: 1
-    }))));
+    // 如果没有 SHA，先获取当前文件的 SHA
+    if (!cloudDataSha) {
+      try {
+        const resp = await fetch(CLOUD_CONFIG.apiBase, {
+          headers: { 'Authorization': 'token ' + CLOUD_CONFIG.token }
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          cloudDataSha = data.sha;
+        }
+      } catch(e) { console.warn('获取 SHA 失败:', e); }
+    }
+    
+    // 序列化数据，照片压缩后保存
+    const saveRecords = records.map(r => {
+      const obj = {...r};
+      // 照片太大则省略（GitHub API 限制）
+      if (obj.photo && obj.photo.length > 500000) obj.photo = '[照片过大已省略]';
+      return obj;
+    });
+    const jsonStr = JSON.stringify({
+      users: USERS, records: saveRecords, nextId: nextId, version: 1
+    });
+    // 使用 UTF-8 安全的 base64 编码
+    const encoder = new TextEncoder();
+    const uint8 = encoder.encode(jsonStr);
+    let binary = '';
+    uint8.forEach(b => binary += String.fromCharCode(b));
+    const content = btoa(binary);
+    
     const body = {
       message: '数据更新 - ' + new Date().toLocaleString('zh-CN'),
       content: content
@@ -1433,25 +1473,39 @@ async function cloudSave() {
       body: JSON.stringify(body)
     });
     if (!resp.ok) {
-      const err = await resp.json();
-      // SHA 冲突，重新拉取再保存
-      if (resp.status === 409 && err.message && err.message.includes('409')) {
-        await cloudLoad();
+      const err = await resp.json().catch(() => ({}));
+      if (resp.status === 409) {
+        // SHA 冲突，重新拉取再合并保存
+        console.warn('SHA 冲突，重新拉取...');
         cloudDataSha = null;
+        const latest = await cloudLoad();
+        if (latest) {
+          if (latest.users) { USERS.length = 0; latest.users.forEach(u => USERS.push(u)); }
+          if (latest.records) {
+            records.length = 0;
+            latest.records.forEach(r => {
+              if (typeof r.date === 'string') r.date = new Date(r.date);
+              if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+              records.push(r);
+            });
+          }
+          if (latest.nextId) nextId = latest.nextId;
+        }
+        cloudSyncing = false;
         return cloudSave();
       }
-      throw new Error('HTTP ' + resp.status);
+      throw new Error('HTTP ' + resp.status + ': ' + (err.message || ''));
     }
     const result = await resp.json();
     cloudDataSha = result.content.sha;
     cloudDirty = false;
-    // 同步更新本地缓存
     localStorage.setItem('app_users', JSON.stringify(USERS));
     localStorage.setItem('app_records', JSON.stringify(records));
     localStorage.setItem('app_nextId', nextId);
+    console.log('✅ 云端保存成功');
   } catch(e) {
     console.warn('云端保存失败:', e);
-    // 保存到本地缓存
+    cloudDataSha = null; // 保存失败，下次重试时重新获取 SHA
     localStorage.setItem('app_users', JSON.stringify(USERS));
     localStorage.setItem('app_records', JSON.stringify(records));
     localStorage.setItem('app_nextId', nextId);
@@ -1466,6 +1520,38 @@ function cloudSaveDebounced() {
   if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(() => cloudSave(), 3000);
 }
+
+// Java 层注入云端数据的回调
+window._injectCloudData = function(cloudData) {
+  try {
+    if (cloudData.users && cloudData.users.length > 0) {
+      USERS.length = 0;
+      cloudData.users.forEach(u => USERS.push(u));
+      localStorage.setItem('app_users', JSON.stringify(USERS));
+    }
+    if (cloudData.records) {
+      records.length = 0;
+      cloudData.records.forEach(r => {
+        if (typeof r.date === 'string') r.date = new Date(r.date);
+        if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+        records.push(r);
+      });
+      localStorage.setItem('app_records', JSON.stringify(records));
+    }
+    if (cloudData.nextId) {
+      nextId = cloudData.nextId;
+      localStorage.setItem('app_nextId', nextId);
+    }
+    // 标记已注入，后续需要保存时先获取最新 SHA
+    cloudDataSha = null;
+    console.log('✅ 云端数据已通过 Java 层注入，用户数:' + USERS.length + ' 记录数:' + records.length);
+    hideLoading();
+    if (typeof renderHome === 'function') renderHome();
+  } catch(e) {
+    console.warn('注入云端数据失败:', e);
+    hideLoading();
+  }
+};
 
 // 从 localStorage 加载用户数据（离线回退）
 function loadUsers() {
@@ -1497,6 +1583,53 @@ let taskCount = 1;
 let photoUploaded = false;
 let photoFileName = '';
 let photoBase64 = ''; // 存储照片 base64 数据
+
+// 压缩图片到指定大小以下（默认 900KB）
+function compressImage(base64Str, maxSizeKB) {
+  maxSizeKB = maxSizeKB || 900;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      // 计算压缩比例，逐步缩小直到满足大小要求
+      let quality = 0.7;
+      let canvas = document.createElement('canvas');
+      let ctx = canvas.getContext('2d');
+      
+      function tryCompress() {
+        // 限制最大尺寸 1920px
+        let ratio = 1;
+        if (w > 1920 || h > 1920) {
+          ratio = Math.min(1920 / w, 1920 / h);
+        }
+        canvas.width = Math.round(w * ratio);
+        canvas.height = Math.round(h * ratio);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        // 估算大小（base64 约为实际大小的 1.37 倍）
+        let sizeKB = Math.round((dataUrl.length * 3) / 4 / 1024);
+        
+        if (sizeKB > maxSizeKB) {
+          quality -= 0.15;
+          w *= 0.8;
+          h *= 0.8;
+          if (quality < 0.1) {
+            resolve(dataUrl); // 已经很小了，直接返回
+            return;
+          }
+          tryCompress();
+        } else {
+          resolve(dataUrl);
+        }
+      }
+      tryCompress();
+    };
+    img.onerror = () => resolve(base64Str); // 压缩失败返回原图
+    img.src = base64Str;
+  });
+}
 let selectedModule = '全部';
 let currentTab = 0;
 let statYear = 2026, statMonth = 4;
@@ -1950,14 +2083,16 @@ function uploadPhoto() {
     if (!file) { document.body.removeChild(input); return; }
     photoUploaded = true;
     photoFileName = file.name;
-    // 将照片转为 base64 存储
+    // 将照片转为 base64 并压缩
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      photoBase64 = ev.target.result; // data:image/jpeg;base64,...
+    reader.onload = async (ev) => {
+      const raw = ev.target.result;
+      photoBase64 = await compressImage(raw, 900); // 压缩到 900KB 以下
+      const sizeKB = Math.round((photoBase64.length * 3) / 4 / 1024);
       const el = document.getElementById('photo-upload');
       el.classList.add('photo-uploaded');
-      el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
-      showToast('📷 照片已选择：' + file.name);
+      el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + ' (' + sizeKB + 'KB)</span>';
+      showToast('📷 照片已选择：' + file.name + ' (' + sizeKB + 'KB)');
     };
     reader.readAsDataURL(file);
     document.body.removeChild(input);
@@ -1981,12 +2116,14 @@ function uploadPhoto() {
         photoUploaded = true;
         photoFileName = file.name;
         const reader2 = new FileReader();
-        reader2.onload = (ev) => {
-          photoBase64 = ev.target.result;
+        reader2.onload = async (ev) => {
+          const raw = ev.target.result;
+          photoBase64 = await compressImage(raw, 900);
+          const sizeKB = Math.round((photoBase64.length * 3) / 4 / 1024);
           const el = document.getElementById('photo-upload');
           el.classList.add('photo-uploaded');
-          el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + '</span>';
-          showToast('📷 照片已选择：' + file.name);
+          el.innerHTML = '<span class="photo-upload-icon" style="font-size:16px;">✅</span><span class="photo-upload-text" style="font-size:11px;">' + file.name.substring(0, 12) + ' (' + sizeKB + 'KB)</span>';
+          showToast('📷 照片已选择：' + file.name + ' (' + sizeKB + 'KB)');
         };
         reader2.readAsDataURL(file);
         document.body.removeChild(input2);
@@ -2027,6 +2164,7 @@ function submitScoreMulti() {
     hideLoading();
     showToast(`✅ 成功提交 ${selectedTaskIds.size} 项作业申报`);
     cloudSaveDebounced();
+    renderHome(); // 刷新首页数据
     // Reset
     selectedTaskIds.clear();
     openModules.clear();
@@ -2079,12 +2217,12 @@ function switchApprovalTab(idx, el) {
 
 function approveRecord(id) {
   const r = records.find(r => r.id === id);
-  if (r) { r.status = 'approved'; renderApproval(); showToast('✅ 已通过'); cloudSaveDebounced(); }
+  if (r) { r.status = 'approved'; renderApproval(); renderHome(); showToast('✅ 已通过'); cloudSaveDebounced(); }
 }
 
 function rejectRecord(id) {
   const r = records.find(r => r.id === id);
-  if (r) { r.status = 'rejected'; r.rejectReason = '不符合要求'; renderApproval(); showToast('❌ 已驳回'); cloudSaveDebounced(); }
+  if (r) { r.status = 'rejected'; r.rejectReason = '不符合要求'; renderApproval(); renderHome(); showToast('❌ 已驳回'); cloudSaveDebounced(); }
 }
 
 // 查看照片大图
@@ -2377,6 +2515,7 @@ function quickApprove(id) {
   r.status = 'approved';
   showToast(`✅ 已通过「${r.userName}」的申报`);
   renderAllRecords();
+  renderHome(); // 刷新首页统计
   cloudSaveDebounced();
 }
 
@@ -3051,13 +3190,15 @@ function addListAnimation(container) {
 initSubmit();
 loadSavedLogin();
 checkVersionUpdate();
+initCloud(); // 尝试从云端加载数据（Java 注入优先）
 
-// 从云端加载数据（异步）
-(async function initCloud() {
+// 从云端加载数据（异步，作为 Java 注入的备用方案）
+async function initCloud() {
+  // 如果 Java 层已经注入了数据，跳过
+  if (cloudDataSha === 'java-injected') return;
   showLoading('正在同步数据...');
   const cloudData = await cloudLoad();
   if (cloudData) {
-    // 合并云端数据
     if (cloudData.users && cloudData.users.length > 0) {
       USERS.length = 0;
       cloudData.users.forEach(u => USERS.push(u));
@@ -3066,7 +3207,6 @@ checkVersionUpdate();
     if (cloudData.records) {
       records.length = 0;
       cloudData.records.forEach(r => {
-        // 还原日期对象
         if (typeof r.date === 'string') r.date = new Date(r.date);
         if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
         records.push(r);
@@ -3078,7 +3218,6 @@ checkVersionUpdate();
       localStorage.setItem('app_nextId', nextId);
     }
   } else {
-    // 离线模式：从本地缓存加载
     const savedRecords = localStorage.getItem('app_records');
     if (savedRecords) {
       try {
@@ -3093,16 +3232,21 @@ checkVersionUpdate();
     }
     const savedNextId = localStorage.getItem('app_nextId');
     if (savedNextId) nextId = parseInt(savedNextId);
-    // 本地没有记录时，初始化演示数据
     if (records.length === 0) initRecords();
   }
   hideLoading();
-})();
+}
 
 // 延迟初始化交互效果
 setTimeout(() => {
   initRippleEffects();
 }, 500);
+</script>
+<script>
+// 注册 Service Worker（PWA 离线支持）
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
