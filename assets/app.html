@@ -1620,8 +1620,8 @@ window._injectCloudData = function(cloudData, token) {
     if (cloudData.disabledUsers) {
       userDisabled = new Set(cloudData.disabledUsers);
     }
-    // 标记已注入，后续需要保存时先获取最新 SHA
-    cloudDataSha = null;
+    // 标记已注入，initCloud 会跳过重复加载
+    cloudDataSha = 'java-injected';
     window._cloudDataReady = true;
     console.log('✅ 云端数据已通过 Java 层注入，用户数:' + USERS.length + ' 记录数:' + records.length);
     hideLoading();
@@ -2660,7 +2660,7 @@ function renderUsers() {
         <div style="margin-top:6px;display:flex;gap:6px;">
           ${canEdit ? `<button class="admin-action-btn btn-edit" onclick="editUser(${u.id})">编辑</button>
           <button class="admin-action-btn ${disabled?'btn-primary':'btn-danger'}" onclick="toggleUserStatus(${u.id})">${disabled?'启用':'禁用'}</button>
-          <button class="admin-action-btn btn-danger" onclick="deleteUser(${u.id})" style="background:var(--red);">删除</button>` : ''}
+          <button class="admin-action-btn btn-danger" onclick="deleteUser(${u.id})">删除</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -3325,6 +3325,11 @@ async function initCloud() {
   if (cloudDataSha === 'java-injected') return;
   showLoading('正在同步数据...');
   const cloudData = await cloudLoad();
+  // 如果在等待期间 Java 层已注入数据，跳过覆盖
+  if (cloudDataSha === 'java-injected') {
+    hideLoading();
+    return;
+  }
   if (cloudData) {
     if (cloudData.users && cloudData.users.length > 0) {
       USERS.length = 0;
