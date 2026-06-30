@@ -1642,9 +1642,9 @@ function loadUsers() {
 }
 
 // 保存用户（触发云端同步）
-function saveUsers() {
+function saveUsers(immediate) {
   localStorage.setItem('app_users', JSON.stringify(USERS));
-  cloudSaveDebounced();
+  if (immediate) { cloudSave(); } else { cloudSaveDebounced(); }
 }
 
 // 角色判断辅助函数
@@ -2659,7 +2659,8 @@ function renderUsers() {
         <span class="admin-badge ${disabled?'badge-disabled':'badge-active'}">${disabled?'已禁用':'正常'}</span>
         <div style="margin-top:6px;display:flex;gap:6px;">
           ${canEdit ? `<button class="admin-action-btn btn-edit" onclick="editUser(${u.id})">编辑</button>
-          <button class="admin-action-btn ${disabled?'btn-primary':'btn-danger'}" onclick="toggleUserStatus(${u.id})">${disabled?'启用':'禁用'}</button>` : ''}
+          <button class="admin-action-btn ${disabled?'btn-primary':'btn-danger'}" onclick="toggleUserStatus(${u.id})">${disabled?'启用':'禁用'}</button>
+          <button class="admin-action-btn btn-danger" onclick="deleteUser(${u.id})" style="background:var(--red);">删除</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -2669,6 +2670,26 @@ function renderUsers() {
 function toggleUserStatus(id) {
   if (userDisabled.has(id)) { userDisabled.delete(id); showToast('✅ 用户已启用'); }
   else { userDisabled.add(id); showToast('❌ 用户已禁用'); }
+  saveUsers(true);
+  renderUsers();
+}
+
+function deleteUser(id) {
+  const u = USERS.find(x => x.id === id);
+  if (!u) return;
+  // 不能删除自己
+  if (u.id === currentUser.id) { showToast('⚠️ 不能删除当前登录账号'); return; }
+  // 不能删除 superadmin
+  if (isSuperAdmin(u.role)) { showToast('⚠️ 不能删除开发者账号'); return; }
+  // 非 superadmin 不能删除管理员
+  if (isAdminRole(u.role) && !isSuperAdmin(currentUser.role)) { showToast('⚠️ 无权限删除管理员'); return; }
+  // 弹窗确认
+  if (!confirm(`确定要删除用户「${u.name}」（账号：${u.account}）吗？\n\n删除后该用户的历史记录仍保留，但账号将无法登录。`)) return;
+  const idx = USERS.findIndex(x => x.id === id);
+  if (idx > -1) USERS.splice(idx, 1);
+  userDisabled.delete(id);
+  saveUsers(true);
+  showToast(`✅ 已删除用户：${u.name}`);
   renderUsers();
 }
 
@@ -2729,7 +2750,7 @@ function saveUserEdit() {
   u.account = account;
   if (pwd) u.pwd = pwd;
   u.role = editRole;
-  saveUsers();
+  saveUsers(true);
   showToast(`✅ ${name} 信息已更新`);
   closeUserEditModal();
   renderUsers();
@@ -2745,7 +2766,7 @@ function showUserForm() {
     if (dup) { showToast('⚠️ 账号已存在'); return; }
     const newId = Math.max(...USERS.map(u => u.id)) + 1;
     USERS.push({id: newId, name: vals[0], role: 'employee', pwd: vals[2], account: vals[1], firstLogin: vals[2] ? false : true});
-    saveUsers();
+    saveUsers(true);
     showToast(`✅ 已添加用户：${vals[0]}（账号：${vals[1]}）`);
     renderUsers();
   });
