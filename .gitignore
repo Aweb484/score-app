@@ -1,0 +1,21 @@
+# Build outputs
+build/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Gradle
+.gradle/
+local.properties
+
+# Debug keystore (don't push secrets)
+debug.keystore
