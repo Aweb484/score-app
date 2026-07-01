@@ -914,8 +914,8 @@
           <div class="profile-stat-label">申报次数</div>
         </div>
         <div class="profile-stat">
-          <div class="profile-stat-value">接触轨</div>
-          <div class="profile-stat-label">部门</div>
+          <div class="profile-stat-value" id="profile-team">-</div>
+          <div class="profile-stat-label">班组</div>
         </div>
       </div>
       <div class="menu-list" id="profile-menu">
@@ -941,6 +941,11 @@
         <div class="menu-item" onclick="navigateTo('users')">
           <div class="menu-icon">👥</div>
           <div class="menu-text"><div class="menu-title">用户管理</div><div class="menu-subtitle">新增/编辑/禁用用户账号</div></div>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" id="org-mgmt-menu" onclick="navigateTo('org-mgmt')" style="display:none;">
+          <div class="menu-icon">🏢</div>
+          <div class="menu-text"><div class="menu-title">组织架构</div><div class="menu-subtitle">管理部门/线路/班组层级结构</div></div>
           <span class="menu-arrow">›</span>
         </div>
         <div class="menu-item" onclick="navigateTo('standards-mgmt')">
@@ -1168,6 +1173,17 @@
       <div style="height:100px"></div>
     </div>
 
+    <!-- ===== ORG MANAGEMENT SCREEN (superadmin only) ===== -->
+    <div class="screen hidden" id="screen-org-mgmt">
+      <div class="app-bar">
+        <span class="app-bar-back" onclick="goBack()">←</span>
+        <span class="app-bar-title">组织架构管理</span>
+      </div>
+      <div id="org-tree-view" style="padding:16px;"></div>
+      <button class="admin-fab" onclick="showAddOrgNode()">+</button>
+      <div style="height:100px"></div>
+    </div>
+
     <!-- ===== BOTTOM NAV ===== -->
     <div class="bottom-nav" id="bottom-nav" style="display:none;">
       <div class="nav-item active" onclick="switchTab(0)">
@@ -1230,6 +1246,10 @@
             <div class="chip" data-role="manager" onclick="selectEditRole('manager')">部门管理员</div>
             <div class="chip" data-role="admin" onclick="selectEditRole('admin')">系统管理员</div>
           </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:6px;">所属班组</label>
+          <select id="edit-user-team" style="width:100%;padding:10px 12px;border:1px solid var(--lightGray);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;background:#fff;"></select>
         </div>
         <div style="display:flex;gap:10px;">
           <button onclick="closeUserEditModal()" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--lightGray);background:#fff;font-size:14px;color:var(--gray);cursor:pointer;">取消</button>
@@ -1361,30 +1381,30 @@ function saveStandards() {
 loadStandards();
 
 const DEFAULT_USERS = [
-  {id:1,name:'郝志强',role:'employee',pwd:'06004122',account:'06004122',firstLogin:true},
-  {id:2,name:'侯晓亮',role:'employee',pwd:'06003957',account:'06003957',firstLogin:true},
-  {id:3,name:'杜兵',role:'employee',pwd:'06002071',account:'06002071',firstLogin:true},
-  {id:4,name:'刘晓阳',role:'employee',pwd:'06003111',account:'06003111',firstLogin:true},
-  {id:5,name:'夏海强',role:'employee',pwd:'06003657',account:'06003657',firstLogin:true},
-  {id:6,name:'马鹏程',role:'employee',pwd:'06004614',account:'06004614',firstLogin:true},
-  {id:7,name:'周奥青',role:'employee',pwd:'06004638',account:'06004638',firstLogin:true},
-  {id:8,name:'王志波',role:'employee',pwd:'06005584',account:'06005584',firstLogin:true},
-  {id:9,name:'吴立志',role:'employee',pwd:'06006634',account:'06006634',firstLogin:true},
-  {id:10,name:'李坤',role:'employee',pwd:'06012223',account:'06012223',firstLogin:true},
-  {id:11,name:'周江涛',role:'employee',pwd:'06012500',account:'06012500',firstLogin:true},
-  {id:12,name:'刘超',role:'employee',pwd:'06012510',account:'06012510',firstLogin:true},
-  {id:13,name:'张文博',role:'employee',pwd:'06012512',account:'06012512',firstLogin:true},
-  {id:14,name:'黄志豪',role:'employee',pwd:'06012520',account:'06012520',firstLogin:true},
-  {id:15,name:'田洪大',role:'employee',pwd:'06012524',account:'06012524',firstLogin:true},
-  {id:16,name:'薛丰毅',role:'employee',pwd:'06013778',account:'06013778',firstLogin:true},
-  {id:17,name:'王伟杰',role:'employee',pwd:'06013791',account:'06013791',firstLogin:true},
-  {id:18,name:'赵智龙',role:'employee',pwd:'06013793',account:'06013793',firstLogin:true},
-  {id:19,name:'朱新明',role:'employee',pwd:'06014597',account:'06014597',firstLogin:true},
-  {id:20,name:'张鑫',role:'employee',pwd:'06014606',account:'06014606',firstLogin:true},
-  {id:21,name:'韩枫',role:'employee',pwd:'06016966',account:'06016966',firstLogin:true},
-  {id:22,name:'王元坤',role:'employee',pwd:'06016967',account:'06016967',firstLogin:true},
-  {id:99,name:'开发者',role:'superadmin',pwd:'6012510',account:'6012510'},
-  {id:100,name:'管理员',role:'admin',pwd:'6012524',account:'6012524'},
+  {id:1,name:'郝志强',role:'employee',pwd:'06004122',account:'06004122',firstLogin:true,teamId:4},
+  {id:2,name:'侯晓亮',role:'employee',pwd:'06003957',account:'06003957',firstLogin:true,teamId:4},
+  {id:3,name:'杜兵',role:'employee',pwd:'06002071',account:'06002071',firstLogin:true,teamId:4},
+  {id:4,name:'刘晓阳',role:'employee',pwd:'06003111',account:'06003111',firstLogin:true,teamId:4},
+  {id:5,name:'夏海强',role:'employee',pwd:'06003657',account:'06003657',firstLogin:true,teamId:4},
+  {id:6,name:'马鹏程',role:'employee',pwd:'06004614',account:'06004614',firstLogin:true,teamId:4},
+  {id:7,name:'周奥青',role:'employee',pwd:'06004638',account:'06004638',firstLogin:true,teamId:4},
+  {id:8,name:'王志波',role:'employee',pwd:'06005584',account:'06005584',firstLogin:true,teamId:4},
+  {id:9,name:'吴立志',role:'employee',pwd:'06006634',account:'06006634',firstLogin:true,teamId:4},
+  {id:10,name:'李坤',role:'employee',pwd:'06012223',account:'06012223',firstLogin:true,teamId:4},
+  {id:11,name:'周江涛',role:'employee',pwd:'06012500',account:'06012500',firstLogin:true,teamId:4},
+  {id:12,name:'刘超',role:'employee',pwd:'06012510',account:'06012510',firstLogin:true,teamId:4},
+  {id:13,name:'张文博',role:'employee',pwd:'06012512',account:'06012512',firstLogin:true,teamId:4},
+  {id:14,name:'黄志豪',role:'employee',pwd:'06012520',account:'06012520',firstLogin:true,teamId:4},
+  {id:15,name:'田洪大',role:'employee',pwd:'06012524',account:'06012524',firstLogin:true,teamId:4},
+  {id:16,name:'薛丰毅',role:'employee',pwd:'06013778',account:'06013778',firstLogin:true,teamId:4},
+  {id:17,name:'王伟杰',role:'employee',pwd:'06013791',account:'06013791',firstLogin:true,teamId:4},
+  {id:18,name:'赵智龙',role:'employee',pwd:'06013793',account:'06013793',firstLogin:true,teamId:4},
+  {id:19,name:'朱新明',role:'employee',pwd:'06014597',account:'06014597',firstLogin:true,teamId:4},
+  {id:20,name:'张鑫',role:'employee',pwd:'06014606',account:'06014606',firstLogin:true,teamId:4},
+  {id:21,name:'韩枫',role:'employee',pwd:'06016966',account:'06016966',firstLogin:true,teamId:4},
+  {id:22,name:'王元坤',role:'employee',pwd:'06016967',account:'06016967',firstLogin:true,teamId:4},
+  {id:99,name:'开发者',role:'superadmin',pwd:'6012510',account:'6012510',teamId:4},
+  {id:100,name:'管理员',role:'admin',pwd:'6012524',account:'6012524',teamId:4},
 ];
 
 // ===== GitHub 云端数据同步 =====
@@ -1453,7 +1473,8 @@ async function cloudSave() {
     const jsonStr = JSON.stringify({
       users: USERS, records: saveRecords, nextId: nextId,
       standards: STANDARDS, disabledUsers: [...userDisabled],
-      version: 1
+      orgTree: ORG_TREE, orgNextId: orgNextId,
+      version: 2
     });
     // 使用 UTF-8 安全的 base64 编码
     const encoder = new TextEncoder();
@@ -1502,6 +1523,14 @@ async function cloudSave() {
             });
           }
           if (latest.nextId) nextId = Math.max(nextId, latest.nextId);
+          // 合并组织架构：云端新节点补充进来
+          if (latest.orgTree) {
+            const localOrgIds = new Set(ORG_TREE.map(n => n.id));
+            latest.orgTree.forEach(n => {
+              if (!localOrgIds.has(n.id)) ORG_TREE.push(n);
+            });
+          }
+          if (latest.orgNextId) orgNextId = Math.max(orgNextId, latest.orgNextId);
         }
         cloudSyncing = false;
         return cloudSave();
@@ -1593,7 +1622,17 @@ async function forceCloudSync() {
         userDisabled = new Set(cloudData.disabledUsers);
         saveDisabled();
       }
+      if (cloudData.orgTree && cloudData.orgTree.length > 0) {
+        ORG_TREE.length = 0;
+        cloudData.orgTree.forEach(n => ORG_TREE.push(n));
+        localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+      }
+      if (cloudData.orgNextId) {
+        orgNextId = cloudData.orgNextId;
+        localStorage.setItem('app_orgNextId', orgNextId);
+      }
     }
+    migrateDataForOrgTree();
     hideLoading();
     cloudDirty = false;
     if (statusEl) statusEl.textContent = '将本地数据上传到云端并从云端拉取最新数据';
@@ -1638,6 +1677,16 @@ window._injectCloudData = function(cloudData, token) {
       userDisabled = new Set(cloudData.disabledUsers);
       saveDisabled();
     }
+    if (cloudData.orgTree && cloudData.orgTree.length > 0) {
+      ORG_TREE.length = 0;
+      cloudData.orgTree.forEach(n => ORG_TREE.push(n));
+      localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+    }
+    if (cloudData.orgNextId) {
+      orgNextId = cloudData.orgNextId;
+      localStorage.setItem('app_orgNextId', orgNextId);
+    }
+    migrateDataForOrgTree();
     // 标记已注入，initCloud 会跳过重复加载
     cloudDataSha = 'java-injected';
     window._cloudDataReady = true;
@@ -1680,6 +1729,115 @@ let taskCount = 1;
 let photoUploaded = false;
 let photoFileName = '';
 let photoBase64 = ''; // 存储照片 base64 数据
+
+// ===== 组织架构管理 =====
+const ORG_LEVEL_NAMES = {1:'专业', 2:'部门', 3:'线路', 4:'班组'};
+let ORG_TREE = [];
+let orgNextId = 1;
+
+function loadOrgTree() {
+  const saved = localStorage.getItem('app_orgTree');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch(e) {}
+  }
+  return null;
+}
+
+function saveOrgTree(immediate) {
+  localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+  localStorage.setItem('app_orgNextId', orgNextId);
+  if (immediate) cloudSave(); else cloudSaveDebounced();
+}
+
+function seedDefaultOrgTree() {
+  ORG_TREE = [
+    {id:1, parentId:null, level:1, name:'接触轨专业'},
+    {id:2, parentId:1, level:2, name:'接触轨二部'},
+    {id:3, parentId:2, level:3, name:'蓝谷快线'},
+    {id:4, parentId:3, level:4, name:'接触轨四工班'}
+  ];
+  orgNextId = 5;
+  saveOrgTree(false);
+}
+
+function getOrgChildren(parentId) {
+  return ORG_TREE.filter(n => n.parentId === parentId);
+}
+
+function getOrgDescendantIds(nodeId) {
+  const result = [nodeId];
+  const children = ORG_TREE.filter(n => n.parentId === nodeId);
+  children.forEach(c => { result.push(...getOrgDescendantIds(c.id)); });
+  return result;
+}
+
+function getOrgPath(nodeId) {
+  const path = [];
+  let node = ORG_TREE.find(n => n.id === nodeId);
+  while (node) {
+    path.unshift(node);
+    node = node.parentId ? ORG_TREE.find(n => n.id === node.parentId) : null;
+  }
+  return path;
+}
+
+function getOrgLeaves() {
+  return ORG_TREE.filter(n => !ORG_TREE.some(c => c.parentId === n.id));
+}
+
+function getUserTeamName(userId) {
+  const user = USERS.find(u => u.id === userId);
+  if (!user || !user.teamId) return '未分配';
+  const node = ORG_TREE.find(n => n.id === user.teamId);
+  return node ? node.name : '未知';
+}
+
+function getUserTeamPath(userId) {
+  const user = USERS.find(u => u.id === userId);
+  if (!user || !user.teamId) return '未分配';
+  return getOrgPath(user.teamId).map(p => p.name).join(' > ');
+}
+
+function isTeamSameOrDescendant(teamIdA, teamIdB) {
+  if (teamIdA === teamIdB) return true;
+  return getOrgDescendantIds(teamIdA).includes(teamIdB);
+}
+
+function getTeamScopedRecords() {
+  if (!currentUser) return [];
+  if (isSuperAdmin(currentUser.role)) return records;
+  const visibleUserIds = new Set(
+    USERS.filter(u => u.teamId && isTeamSameOrDescendant(currentUser.teamId, u.teamId)).map(u => u.id)
+  );
+  return records.filter(r => visibleUserIds.has(r.userId));
+}
+
+function getTeamScopedUsers() {
+  if (!currentUser) return [];
+  if (isSuperAdmin(currentUser.role)) return USERS.filter(u => !isSuperAdmin(u.role));
+  return USERS.filter(u => {
+    if (isSuperAdmin(u.role)) return false;
+    return u.teamId && isTeamSameOrDescendant(currentUser.teamId, u.teamId);
+  });
+}
+
+function migrateDataForOrgTree() {
+  if (ORG_TREE.length === 0) seedDefaultOrgTree();
+  const defaultTeam = ORG_TREE.find(n => n.level === 4);
+  if (defaultTeam) {
+    let migrated = false;
+    USERS.forEach(u => {
+      if (u.teamId === undefined || u.teamId === null) {
+        u.teamId = defaultTeam.id;
+        migrated = true;
+      }
+    });
+    if (migrated) saveUsers(false);
+  }
+}
 
 // 压缩图片到指定大小以下（默认 900KB）
 function compressImage(base64Str, maxSizeKB) {
@@ -1814,6 +1972,7 @@ function navigateTo(screen) {
   if (screen === 'backup') renderBackup();
   if (screen === 'all-records') renderAllRecords();
   if (screen === 'my-records') renderMyRecords();
+  if (screen === 'org-mgmt') renderOrgTree();
 }
 
 function goBack() {
@@ -1994,7 +2153,8 @@ function renderHome() {
   const days = ['日','一','二','三','四','五','六'];
   document.getElementById('home-date').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${days[now.getDay()]}`;
 
-  const pending = records.filter(r => r.status === 'pending');
+  const scopedRecords = getTeamScopedRecords();
+  const pending = scopedRecords.filter(r => r.status === 'pending');
   const canApprove = isAdminRole(currentUser.role);
   document.getElementById('pending-count').textContent = pending.length;
   document.getElementById('home-pending').textContent = pending.length;
@@ -2013,7 +2173,7 @@ function renderHome() {
   const canViewRanking = isAdminRole(currentUser.role);
   const scores = {};
   if (canViewRanking) {
-    records.filter(r => r.status === 'approved'
+    scopedRecords.filter(r => r.status === 'approved'
       && r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth())
       .forEach(r => { scores[r.userName] = (scores[r.userName]||0) + r.score; });
   }
@@ -2065,6 +2225,17 @@ const MODULE_ICONS = {'计划修作业':'🔧','配合作业':'🤝','日常运�
 let selectedTaskIds = new Set();
 let openModules = new Set();
 let openCategories = new Set();
+let customScores = {}; // 区间分值的用户自定义分数 {taskId: score}
+
+// 判断分值是否为区间格式（如 "0.5-2"）
+function isScoreRange(score) {
+  return typeof score === 'string' && /^\d+(\.\d+)?\s*-\s*\d+(\.\d+)?$/.test(score);
+}
+function parseScoreRange(score) {
+  if (!isScoreRange(score)) return null;
+  const parts = String(score).split('-').map(s => parseFloat(s.trim()));
+  return { min: parts[0], max: parts[1] };
+}
 
 function initSubmit() {
   document.getElementById('task-date').value = new Date().toISOString().split('T')[0];
@@ -2155,13 +2326,36 @@ function toggleCategory(mod, cat) {
 }
 
 function toggleTask(taskId) {
-  if (selectedTaskIds.has(taskId)) selectedTaskIds.delete(taskId);
-  else selectedTaskIds.add(taskId);
-  renderCategoryList();
+  if (selectedTaskIds.has(taskId)) {
+    selectedTaskIds.delete(taskId);
+    delete customScores[taskId];
+    renderCategoryList();
+    return;
+  }
+  const task = STANDARDS.find(s => s.id === taskId);
+  if (task && isScoreRange(task.score)) {
+    const range = parseScoreRange(task.score);
+    popupInput('请输入分值', [
+      {label: task.content, placeholder: '范围：' + range.min + ' - ' + range.max + ' 分', value: String(range.min)}
+    ], function(vals) {
+      const v = parseFloat(vals[0]);
+      if (isNaN(v) || v < range.min || v > range.max) {
+        showToast('⚠️ 分值须在 ' + range.min + ' ~ ' + range.max + ' 之间');
+        return;
+      }
+      customScores[taskId] = v;
+      selectedTaskIds.add(taskId);
+      renderCategoryList();
+    });
+  } else {
+    selectedTaskIds.add(taskId);
+    renderCategoryList();
+  }
 }
 
 function removeTask(taskId) {
   selectedTaskIds.delete(taskId);
+  delete customScores[taskId];
   renderCategoryList();
 }
 
@@ -2186,9 +2380,11 @@ function updateSelectedSummary() {
   selectedTaskIds.forEach(id => {
     const t = STANDARDS.find(s => s.id === id);
     if (t) {
-      totalScore += t.score;
+      const actualScore = customScores[id] !== undefined ? customScores[id] : (isScoreRange(t.score) ? parseScoreRange(t.score).min : t.score);
+      totalScore += actualScore;
       const shortName = t.content.length > 8 ? t.content.substring(0, 8) + '…' : t.content;
-      tagHtml += `<span class="selected-tag">${esc(shortName)} <span class="selected-tag-remove" onclick="event.stopPropagation();removeTask(${id})">×</span></span>`;
+      const scoreLabel = customScores[id] !== undefined ? actualScore + '分' : (isScoreRange(t.score) ? t.score + '分' : '');
+      tagHtml += `<span class="selected-tag">${esc(shortName)}${scoreLabel ? ' <b>' + scoreLabel + '</b>' : ''} <span class="selected-tag-remove" onclick="event.stopPropagation();removeTask(${id})">×</span></span>`;
     }
   });
   tags.innerHTML = tagHtml;
@@ -2279,10 +2475,11 @@ function submitScoreMulti() {
     selectedTaskIds.forEach(id => {
       const task = STANDARDS.find(s => s.id === id);
       if (task) {
+        const actualScore = customScores[id] !== undefined ? customScores[id] : (isScoreRange(task.score) ? parseScoreRange(task.score).min : task.score);
         records.push({
           id: nextId++, userId: currentUser.id, userName: currentUser.name,
           taskId: task.id, taskName: task.content,
-          date: new Date(dateStr + 'T00:00:00'), count: 1, score: task.score,
+          date: new Date(dateStr + 'T00:00:00'), count: 1, score: actualScore,
           status: 'pending', createdAt: new Date(),
           photo: isFirst ? (photoBase64 || null) : null,
           photoName: isFirst ? (photoFileName || '') : ''
@@ -2297,6 +2494,7 @@ function submitScoreMulti() {
     renderHome(); // 刷新首页数据
     // Reset
     selectedTaskIds.clear();
+    customScores = {};
     openModules.clear();
     openCategories.clear();
     photoUploaded = false;
@@ -2313,8 +2511,9 @@ function submitScoreMulti() {
 
 // ===== APPROVAL =====
 function renderApproval() {
-  const pending = records.filter(r => r.status === 'pending');
-  const done = records.filter(r => r.status !== 'pending');
+  const scopedRecords = getTeamScopedRecords();
+  const pending = scopedRecords.filter(r => r.status === 'pending');
+  const done = scopedRecords.filter(r => r.status !== 'pending');
   document.getElementById('tab-pending-count').textContent = pending.length;
 
   document.getElementById('approval-pending').innerHTML = pending.length === 0
@@ -2436,7 +2635,8 @@ function renderPersonalStats() {
 
 function renderTeamRanking() {
   const scores = {};
-  records.filter(r => r.status==='approved' && r.date.getFullYear()===statYear && r.date.getMonth()+1===statMonth).forEach(r => { scores[r.userName] = (scores[r.userName]||0) + r.score; });
+  const scopedRecs = getTeamScopedRecords();
+  scopedRecs.filter(r => r.status==='approved' && r.date.getFullYear()===statYear && r.date.getMonth()+1===statMonth).forEach(r => { scores[r.userName] = (scores[r.userName]||0) + r.score; });
   const ranking = Object.entries(scores).sort((a,b) => b[1]-a[1]);
   const max = ranking.length > 0 ? ranking[0][1] : 1;
 
@@ -2452,7 +2652,8 @@ function renderTeamRanking() {
 
 function renderTaskStats() {
   const stats = {};
-  records.filter(r => r.status==='approved' && r.date.getFullYear()===statYear && r.date.getMonth()+1===statMonth).forEach(r => { stats[r.taskName] = (stats[r.taskName]||0) + r.count; });
+  const scopedRecs = getTeamScopedRecords();
+  scopedRecs.filter(r => r.status==='approved' && r.date.getFullYear()===statYear && r.date.getMonth()+1===statMonth).forEach(r => { stats[r.taskName] = (stats[r.taskName]||0) + r.count; });
   const sorted = Object.entries(stats).sort((a,b) => b[1]-a[1]);
 
   document.getElementById('stat-tasks').innerHTML = `
@@ -2601,7 +2802,8 @@ function switchAllRecTab(tab) {
 function renderAllRecords() {
   document.getElementById('all-rec-period').textContent = allRecYear + '年' + allRecMonth + '月';
   const q = (document.getElementById('allrec-search').value || '').toLowerCase();
-  let list = records.filter(r => r.date.getFullYear() === allRecYear && r.date.getMonth() + 1 === allRecMonth);
+  const scopedRecs = getTeamScopedRecords();
+  let list = scopedRecs.filter(r => r.date.getFullYear() === allRecYear && r.date.getMonth() + 1 === allRecMonth);
   if (allRecFilter !== 'all') list = list.filter(r => r.status === allRecFilter);
   if (q) list = list.filter(r => r.userName.toLowerCase().includes(q) || r.taskName.toLowerCase().includes(q));
   list.sort((a, b) => b.date - a.date);
@@ -2666,8 +2868,17 @@ function renderProfile() {
   const myApproved = records.filter(r => r.userId === currentUser.id && r.status === 'approved');
   document.getElementById('profile-score').textContent = myApproved.reduce((s,r)=>s+r.score,0);
   document.getElementById('profile-records').textContent = records.filter(r => r.userId === currentUser.id).length;
+  // 动态显示所属班组
+  const teamEl = document.getElementById('profile-team');
+  if (teamEl) {
+    const teamNode = ORG_TREE.find(n => n.id === currentUser.teamId);
+    teamEl.textContent = teamNode ? teamNode.name : '-';
+  }
   // Show/hide admin menu - superadmin/admin/manager 都可以看到
   document.getElementById('admin-menu').style.display = isAdminRole(currentUser.role) ? 'block' : 'none';
+  // 组织架构管理仅开发者可见
+  const orgMenu = document.getElementById('org-mgmt-menu');
+  if (orgMenu) orgMenu.style.display = isSuperAdmin(currentUser.role) ? '' : 'none';
 }
 
 // ===== USER MANAGEMENT =====
@@ -2676,9 +2887,9 @@ function saveDisabled() { localStorage.setItem('app_disabledUsers', JSON.stringi
 
 function renderUsers() {
   const q = (document.getElementById('user-search').value || '').toLowerCase();
-  // 非 superadmin 看不到 superadmin 用户
-  const list = USERS.filter(u => {
-    if (isSuperAdmin(u.role) && !isSuperAdmin(currentUser.role)) return false;
+  // 按班组范围过滤用户
+  const scopedUsers = getTeamScopedUsers();
+  const list = scopedUsers.filter(u => {
     if (!q || u.name.toLowerCase().includes(q)) return true;
     return false;
   });
@@ -2686,13 +2897,14 @@ function renderUsers() {
     const disabled = userDisabled.has(u.id);
     const score = records.filter(r => r.userId === u.id && r.status === 'approved').reduce((s,r) => s+r.score, 0);
     const roleIcon = u.role==='superadmin'?'🔧':u.role==='admin'?'👑':u.role==='manager'?'🛡️':'';
-    // 非 superadmin 不能编辑/禁用管理员
-    const canEdit = isSuperAdmin(currentUser.role) || !isAdminRole(u.role);
+    const teamName = getUserTeamName(u.id);
+    // 非 superadmin 不能编辑/禁用管理员；同班组才能编辑
+    const canEdit = isSuperAdmin(currentUser.role) || (!isAdminRole(u.role) && currentUser.teamId && isTeamSameOrDescendant(currentUser.teamId, u.teamId));
     return `<div class="admin-card">
       <div style="width:40px;height:40px;border-radius:50%;background:${disabled?'var(--lightGray)':'var(--light)'};display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>
       <div class="admin-card-info">
         <div class="admin-card-title">${esc(u.name)} ${roleIcon}</div>
-        <div class="admin-card-sub">${roleNames[u.role]||'普通员工'} · 账号：${esc(u.account||u.name)} · ${score}积分</div>
+        <div class="admin-card-sub">${roleNames[u.role]||'普通员工'} · ${esc(teamName)} · ${score}积分</div>
       </div>
       <div class="admin-card-right">
         <span class="admin-badge ${disabled?'badge-disabled':'badge-active'}">${disabled?'已禁用':'正常'}</span>
@@ -2759,6 +2971,12 @@ function editUser(id) {
   roleGroup.querySelectorAll('.chip').forEach(c => {
     c.classList.toggle('active', c.dataset.role === editRole);
   });
+  // 填充班组选择器
+  const teamSelect = document.getElementById('edit-user-team');
+  teamSelect.innerHTML = getOrgLeaves().map(n => {
+    const path = getOrgPath(n.id).map(p => p.name).join(' > ');
+    return '<option value="' + n.id + '"' + (u.teamId === n.id ? ' selected' : '') + '>' + esc(path) + '</option>';
+  }).join('');
   // 显示弹窗
   document.getElementById('user-edit-overlay').classList.add('show');
   document.getElementById('user-edit-sheet').classList.add('show');
@@ -2778,40 +2996,158 @@ function closeUserEditModal() {
 }
 
 function saveUserEdit() {
-  const u = USERS.find(x => x.id === editingUserId);
-  if (!u) return;
   const name = document.getElementById('edit-user-name').value.trim();
   const account = document.getElementById('edit-user-account').value.trim();
   const pwd = document.getElementById('edit-user-pwd').value.trim();
+  const teamId = parseInt(document.getElementById('edit-user-team').value);
   if (!name) { showToast('⚠️ 姓名不能为空'); return; }
   if (!account) { showToast('⚠️ 账号不能为空'); return; }
-  // 检查账号是否与其他用户重复
-  const dup = USERS.find(x => x.id !== editingUserId && x.account === account);
-  if (dup) { showToast('⚠️ 账号已存在，请使用其他账号'); return; }
-  u.name = name;
-  u.account = account;
-  if (pwd) u.pwd = pwd;
-  u.role = editRole;
-  saveUsers(true);
-  showToast(`✅ ${name} 信息已更新`);
+
+  if (editingUserId === null) {
+    // 新增用户模式
+    const dup = USERS.find(u => u.account === account);
+    if (dup) { showToast('⚠️ 账号已存在'); return; }
+    const newId = Math.max(...USERS.map(u => u.id)) + 1;
+    USERS.push({id: newId, name: name, role: editRole, pwd: pwd, account: account, firstLogin: pwd ? false : true, teamId: teamId || getOrgLeaves()[0]?.id});
+    saveUsers(true);
+    showToast('✅ 已添加用户：' + name + '（账号：' + account + '）');
+  } else {
+    // 编辑用户模式
+    const u = USERS.find(x => x.id === editingUserId);
+    if (!u) return;
+    const dup = USERS.find(x => x.id !== editingUserId && x.account === account);
+    if (dup) { showToast('⚠️ 账号已存在，请使用其他账号'); return; }
+    u.name = name;
+    u.account = account;
+    if (pwd) u.pwd = pwd;
+    u.role = editRole;
+    if (teamId) u.teamId = teamId;
+    saveUsers(true);
+    showToast('✅ ' + name + ' 信息已更新');
+  }
   closeUserEditModal();
   renderUsers();
 }
 
 function showUserForm() {
-  popupInput('新增用户', [
-    {label:'姓名', placeholder:'请输入姓名'},
-    {label:'账号', placeholder:'请输入账号'},
-    {label:'密码', placeholder:'请输入密码（登录时必须）'}
-  ], (vals) => {
-    const dup = USERS.find(u => u.account === vals[1]);
-    if (dup) { showToast('⚠️ 账号已存在'); return; }
-    const newId = Math.max(...USERS.map(u => u.id)) + 1;
-    USERS.push({id: newId, name: vals[0], role: 'employee', pwd: vals[2], account: vals[1], firstLogin: vals[2] ? false : true});
-    saveUsers(true);
-    showToast(`✅ 已添加用户：${vals[0]}（账号：${vals[1]}）`);
-    renderUsers();
+  editingUserId = null;
+  editRole = 'employee';
+  document.getElementById('edit-user-name').value = '';
+  document.getElementById('edit-user-account').value = '';
+  document.getElementById('edit-user-pwd').value = '';
+  document.getElementById('user-edit-title').textContent = '新增用户';
+  // 角色选择器 - 同 editUser
+  const roleGroup = document.getElementById('edit-role-group');
+  let roleHTML = '<div class="chip" data-role="employee" onclick="selectEditRole(\'employee\')">普通员工</div>';
+  if (canManageAdmins(currentUser.role)) {
+    roleHTML += '<div class="chip" data-role="manager" onclick="selectEditRole(\'manager\')">部门管理员</div>';
+    roleHTML += '<div class="chip" data-role="admin" onclick="selectEditRole(\'admin\')">系统管理员</div>';
+  }
+  roleGroup.innerHTML = roleHTML;
+  roleGroup.querySelectorAll('.chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.role === 'employee');
   });
+  // 填充班组选择器（默认选中当前用户的班组）
+  const teamSelect = document.getElementById('edit-user-team');
+  const defaultTeamId = currentUser.teamId;
+  teamSelect.innerHTML = getOrgLeaves().map(n => {
+    const path = getOrgPath(n.id).map(p => p.name).join(' > ');
+    return '<option value="' + n.id + '"' + (n.id === defaultTeamId ? ' selected' : '') + '>' + esc(path) + '</option>';
+  }).join('');
+  // 显示弹窗
+  document.getElementById('user-edit-overlay').classList.add('show');
+  document.getElementById('user-edit-sheet').classList.add('show');
+}
+
+// ===== ORG MANAGEMENT =====
+function renderOrgTree() {
+  const container = document.getElementById('org-tree-view');
+  function renderNode(node, depth) {
+    const children = getOrgChildren(node.id);
+    const levelLabel = ORG_LEVEL_NAMES[node.level] || '';
+    const path = getOrgPath(node.id).map(p => p.name).join(' > ');
+    const userCount = USERS.filter(u => u.teamId === node.id).length;
+    const isLeaf = children.length === 0;
+    const icons = {1:'🏢',2:'🏬',3:'🚇',4:'👥'};
+    return '<div style="padding-left:' + (depth * 20) + 'px;margin-bottom:8px;">' +
+      '<div class="admin-card" style="flex-wrap:wrap;">' +
+        '<div style="width:36px;height:36px;border-radius:10px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">' + (icons[node.level]||'📁') + '</div>' +
+        '<div class="admin-card-info" style="min-width:0;">' +
+          '<div class="admin-card-title" style="font-size:13px;">' + esc(node.name) + '</div>' +
+          '<div class="admin-card-sub">' + levelLabel + (isLeaf ? ' · ' + userCount + '人' : '') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">' +
+          '<button class="admin-action-btn btn-edit" onclick="editOrgNode(' + node.id + ')">编辑</button>' +
+          (node.level < 4 ? '<button class="admin-action-btn btn-primary" onclick="addChildOrgNode(' + node.id + ')">添加下级</button>' : '') +
+          '<button class="admin-action-btn btn-danger" onclick="deleteOrgNode(' + node.id + ')">删除</button>' +
+        '</div>' +
+      '</div>' +
+      children.map(function(c) { return renderNode(c, depth + 1); }).join('') +
+    '</div>';
+  }
+  const roots = ORG_TREE.filter(n => n.parentId === null);
+  container.innerHTML = roots.map(r => renderNode(r, 0)).join('')
+    || '<div style="text-align:center;padding:60px;color:var(--gray)">暂无组织架构数据</div>';
+}
+
+function editOrgNode(id) {
+  const node = ORG_TREE.find(n => n.id === id);
+  if (!node) return;
+  popupInput('编辑' + (ORG_LEVEL_NAMES[node.level]||'节点'), [
+    {label: '名称', value: node.name, placeholder: '请输入名称'}
+  ], function(vals) {
+    node.name = vals[0];
+    saveOrgTree(true);
+    renderOrgTree();
+    showToast('✅ 已更新：' + node.name);
+  });
+}
+
+function addChildOrgNode(parentId) {
+  const parent = ORG_TREE.find(n => n.id === parentId);
+  if (!parent) return;
+  if (parent.level >= 4) { showToast('⚠️ 班组级别下不能再添加下级'); return; }
+  const childLevel = parent.level + 1;
+  popupInput('添加' + (ORG_LEVEL_NAMES[childLevel]||'下级'), [
+    {label: '名称', placeholder: '请输入名称'}
+  ], function(vals) {
+    ORG_TREE.push({id: orgNextId++, parentId: parentId, level: childLevel, name: vals[0]});
+    saveOrgTree(true);
+    renderOrgTree();
+    showToast('✅ 已添加：' + vals[0]);
+  });
+}
+
+function showAddOrgNode() {
+  popupInput('添加顶级节点（专业）', [
+    {label: '名称', placeholder: '请输入专业名称'}
+  ], function(vals) {
+    ORG_TREE.push({id: orgNextId++, parentId: null, level: 1, name: vals[0]});
+    saveOrgTree(true);
+    renderOrgTree();
+    showToast('✅ 已添加：' + vals[0]);
+  });
+}
+
+function deleteOrgNode(id) {
+  const node = ORG_TREE.find(n => n.id === id);
+  if (!node) return;
+  const childNodes = ORG_TREE.filter(n => n.parentId === id);
+  if (childNodes.length > 0) {
+    showToast('⚠️ 该节点下有子节点，请先删除子节点');
+    return;
+  }
+  const affectedUsers = USERS.filter(u => u.teamId === id);
+  if (affectedUsers.length > 0) {
+    showToast('⚠️ 该班组下有 ' + affectedUsers.length + ' 名用户，请先移动用户后再删除');
+    return;
+  }
+  if (!confirm('确定要删除「' + node.name + '」吗？')) return;
+  const idx = ORG_TREE.findIndex(n => n.id === id);
+  if (idx > -1) ORG_TREE.splice(idx, 1);
+  saveOrgTree(true);
+  renderOrgTree();
+  showToast('✅ 已删除：' + node.name);
 }
 
 // ===== STANDARD MANAGEMENT =====
@@ -2853,12 +3189,17 @@ function editStandard(id) {
     {label:'所属模块', value: s.module, placeholder:'计划修作业/配合作业/日常运作/故障处理/专项工作/模块工作'},
     {label:'子类别', value: s.category},
     {label:'计分单位', value: s.unit},
-    {label:'积分分值', value: String(s.score), type:'number'}
+    {label:'积分分值', value: String(s.score), placeholder:'如: 3 或 0.5-2（区间分值）'}
   ], (vals) => {
-    const score = parseFloat(vals[4]);
-    if (isNaN(score) || score <= 0) { showToast('❌ 请输入有效分数'); return; }
-    s.content = vals[0]; s.module = vals[1]; s.category = vals[2]; s.unit = vals[3]; s.score = score;
-    showToast(`✅「${vals[0]}」已更新`);
+    const scoreStr = vals[4].trim();
+    if (isScoreRange(scoreStr)) {
+      s.content = vals[0]; s.module = vals[1]; s.category = vals[2]; s.unit = vals[3]; s.score = scoreStr;
+    } else {
+      const score = parseFloat(scoreStr);
+      if (isNaN(score) || score <= 0) { showToast('❌ 请输入有效分数（如 3）或区间（如 0.5-2）'); return; }
+      s.content = vals[0]; s.module = vals[1]; s.category = vals[2]; s.unit = vals[3]; s.score = score;
+    }
+    showToast('✅「' + vals[0] + '」已更新');
     saveStandards();
     renderStandardsMgmt();
   });
@@ -2882,13 +3223,19 @@ function showStdForm() {
     {label:'所属模块', value:'计划修作业', placeholder:'计划修作业/配合作业/日常运作/故障处理/专项工作/模块工作'},
     {label:'子类别', value:'设备检修', placeholder:'请输入子类别'},
     {label:'计分单位', value:'每次'},
-    {label:'积分分值', value:'3', type:'number'}
+    {label:'积分分值', value:'3', placeholder:'如: 3 或 0.5-2（区间分值）'}
   ], (vals) => {
-    const score = parseFloat(vals[4]);
-    if (isNaN(score) || score <= 0) { showToast('❌ 请输入有效分数'); return; }
+    const scoreStr = vals[4].trim();
+    let score;
+    if (isScoreRange(scoreStr)) {
+      score = scoreStr;
+    } else {
+      score = parseFloat(scoreStr);
+      if (isNaN(score) || score <= 0) { showToast('❌ 请输入有效分数（如 3）或区间（如 0.5-2）'); return; }
+    }
     const newId = Math.max(...STANDARDS.map(s => s.id), 0) + 1;
     STANDARDS.push({id: newId, module: vals[1], category: vals[2], content: vals[0], unit: vals[3], score: score});
-    showToast(`✅ 已添加：${vals[0]}`);
+    showToast('✅ 已添加：' + vals[0]);
     saveStandards();
     renderStandardsMgmt();
   });
@@ -2914,7 +3261,8 @@ function switchExportTab(tab) {
 
 function renderExport() {
   document.getElementById('export-period-text').textContent = exportYear + '年' + exportMonth + '月';
-  let list = records.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
+  const scopedRecs = getTeamScopedRecords();
+  let list = scopedRecs.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
   if (exportFilter !== 'all') list = list.filter(r => r.status === exportFilter);
   list.sort((a, b) => b.date - a.date);
 
@@ -2928,7 +3276,8 @@ function renderExport() {
 }
 
 function doExport() {
-  let list = records.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
+  const scopedRecs = getTeamScopedRecords();
+  let list = scopedRecs.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
   if (exportFilter !== 'all') list = list.filter(r => r.status === exportFilter);
   if (list.length === 0) { showToast('❌ 没有可导出的数据'); return; }
 
@@ -2961,7 +3310,8 @@ function doExport() {
 }
 
 function doExportExcel() {
-  let list = records.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
+  const scopedRecs = getTeamScopedRecords();
+  let list = scopedRecs.filter(r => r.date.getFullYear() === exportYear && r.date.getMonth() + 1 === exportMonth);
   if (exportFilter !== 'all') list = list.filter(r => r.status === exportFilter);
   if (list.length === 0) { showToast('❌ 没有可导出的数据'); return; }
 
@@ -2995,7 +3345,7 @@ function renderBackup() {
 }
 
 function doBackup() {
-  const data = { users: USERS, standards: STANDARDS, records: records, nextId: nextId, disabledUsers: [...userDisabled], backupTime: new Date().toISOString() };
+  const data = { users: USERS, standards: STANDARDS, records: records, nextId: nextId, disabledUsers: [...userDisabled], orgTree: ORG_TREE, orgNextId: orgNextId, backupTime: new Date().toISOString() };
   const json = JSON.stringify(data, null, 2);
   try {
     const blob = new Blob([json], {type: 'application/json'});
@@ -3048,6 +3398,16 @@ function doRestore() {
             userDisabled = new Set(data.disabledUsers);
             saveDisabled();
           }
+          if (data.orgTree && data.orgTree.length > 0) {
+            ORG_TREE.length = 0;
+            data.orgTree.forEach(n => ORG_TREE.push(n));
+            localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+          }
+          if (data.orgNextId) {
+            orgNextId = data.orgNextId;
+            localStorage.setItem('app_orgNextId', orgNextId);
+          }
+          migrateDataForOrgTree();
           // 刷新 currentUser 引用（防止引用失效）
           const freshUser = USERS.find(u => u.id === currentUser.id);
           if (freshUser) currentUser = freshUser;
@@ -3428,6 +3788,15 @@ async function initCloud() {
       userDisabled = new Set(cloudData.disabledUsers);
       saveDisabled();
     }
+    if (cloudData.orgTree && cloudData.orgTree.length > 0) {
+      ORG_TREE.length = 0;
+      cloudData.orgTree.forEach(n => ORG_TREE.push(n));
+      localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+    }
+    if (cloudData.orgNextId) {
+      orgNextId = cloudData.orgNextId;
+      localStorage.setItem('app_orgNextId', orgNextId);
+    }
     window._cloudDataReady = true;
   } else {
     const savedRecords = localStorage.getItem('app_records');
@@ -3445,7 +3814,14 @@ async function initCloud() {
     const savedNextId = localStorage.getItem('app_nextId');
     if (savedNextId) nextId = parseInt(savedNextId);
     if (records.length === 0) initRecords();
+    // 从 localStorage 加载组织架构
+    const savedOrg = loadOrgTree();
+    if (savedOrg) {
+      ORG_TREE = savedOrg;
+      orgNextId = parseInt(localStorage.getItem('app_orgNextId') || '5');
+    }
   }
+  migrateDataForOrgTree();
   window._cloudDataReady = true;
   hideLoading();
 }
