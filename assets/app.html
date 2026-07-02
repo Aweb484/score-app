@@ -755,7 +755,10 @@
             <div class="home-greeting" id="home-greeting">你好，管理员</div>
             <div class="home-date" id="home-date"></div>
           </div>
-          <div class="home-badge" id="home-approval-badge" onclick="navigateTo('approval')">🔔 待审批 <span id="pending-count">3</span></div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="home-badge" id="home-approval-badge" onclick="navigateTo('approval')">🔔 待审批 <span id="pending-count">3</span></div>
+            <div onclick="refreshFromCloud()" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;" title="刷新">🔄</div>
+          </div>
         </div>
       </div>
       <div class="score-cards">
@@ -1040,6 +1043,7 @@
       <div class="app-bar">
         <span class="app-bar-back" onclick="goBack()">←</span>
         <span class="app-bar-title" id="my-records-title">我的记录</span>
+        <span onclick="refreshFromCloud()" style="font-size:18px;cursor:pointer;padding:4px 8px;margin-left:auto;">🔄</span>
       </div>
       <div class="period-selector">
         <span class="period-arrow" onclick="changeMyRecPeriod(-1)">‹</span>
@@ -1585,6 +1589,59 @@ function cloudSaveDebounced() {
   cloudDirty = true;
   if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(() => cloudSave(), 3000);
+}
+
+// 从云端拉取最新数据（仅下载，不上传），刷新当前页面
+async function refreshFromCloud() {
+  if (!CLOUD_CONFIG.token) { showToast('❌ 云端未连接'); return; }
+  showLoading('正在刷新...');
+  try {
+    const cloudData = await cloudLoad();
+    if (cloudData) {
+      if (cloudData.users && cloudData.users.length > 0) {
+        USERS.length = 0;
+        cloudData.users.forEach(u => USERS.push(u));
+        localStorage.setItem('app_users', JSON.stringify(USERS));
+      }
+      if (cloudData.records) {
+        records.length = 0;
+        cloudData.records.forEach(r => {
+          if (typeof r.date === 'string') r.date = new Date(r.date);
+          if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+          records.push(r);
+        });
+        localSaveRecords();
+      }
+      if (cloudData.nextId) { nextId = cloudData.nextId; localStorage.setItem('app_nextId', nextId); }
+      if (cloudData.standards && cloudData.standards.length > 0) {
+        STANDARDS.length = 0;
+        cloudData.standards.forEach(s => STANDARDS.push(s));
+        localStorage.setItem('app_standards', JSON.stringify(STANDARDS));
+      }
+      if (cloudData.disabledUsers) { userDisabled = new Set(cloudData.disabledUsers); saveDisabled(); }
+      if (cloudData.orgTree && cloudData.orgTree.length > 0) {
+        ORG_TREE.length = 0;
+        cloudData.orgTree.forEach(n => ORG_TREE.push(n));
+        localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+      }
+      if (cloudData.orgNextId) { orgNextId = cloudData.orgNextId; localStorage.setItem('app_orgNextId', orgNextId); }
+    }
+    hideLoading();
+    showToast('✅ 已刷新');
+    // 刷新当前活跃页面
+    const activeScreen = document.querySelector('.screen:not(.hidden)');
+    if (activeScreen) {
+      const id = activeScreen.id;
+      if (id === 'screen-home') renderHome();
+      else if (id === 'screen-my-records') renderMyRecords();
+      else if (id === 'screen-approval') renderApproval();
+      else if (id === 'screen-all-records') renderAllRecords();
+      else if (id === 'screen-statistics') { renderHome(); if (typeof renderTeamRanking === 'function') renderTeamRanking(); }
+    }
+  } catch(e) {
+    hideLoading();
+    showToast('❌ 刷新失败：' + e.message);
+  }
 }
 
 // 手动强制同步：先上传本地数据，再从云端拉取最新
