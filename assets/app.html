@@ -1626,6 +1626,7 @@ async function refreshFromCloud() {
       }
       if (cloudData.orgNextId) { orgNextId = cloudData.orgNextId; localStorage.setItem('app_orgNextId', orgNextId); }
     }
+    repairRecordUserNames();
     hideLoading();
     showToast('✅ 已刷新');
     // 刷新当前活跃页面
@@ -1697,6 +1698,7 @@ async function forceCloudSync() {
       }
     }
     migrateDataForOrgTree();
+    repairRecordUserNames();
     hideLoading();
     cloudDirty = false;
     if (statusEl) statusEl.textContent = '将本地数据上传到云端并从云端拉取最新数据';
@@ -1751,6 +1753,7 @@ window._injectCloudData = function(cloudData, token) {
       localStorage.setItem('app_orgNextId', orgNextId);
     }
     migrateDataForOrgTree();
+    repairRecordUserNames();
     // 标记已注入，initCloud 会跳过重复加载
     cloudDataSha = 'java-injected';
     window._cloudDataReady = true;
@@ -1901,6 +1904,19 @@ function migrateDataForOrgTree() {
     });
     if (migrated) saveUsers(false);
   }
+}
+
+// 修复记录中 userName 与 USERS 表中 name 不一致的问题
+function repairRecordUserNames() {
+  let repaired = false;
+  records.forEach(r => {
+    const user = USERS.find(u => u.id === r.userId);
+    if (user && r.userName !== user.name) {
+      r.userName = user.name;
+      repaired = true;
+    }
+  });
+  if (repaired) localSaveRecords();
 }
 
 // 压缩图片到指定大小以下（默认 900KB）
@@ -3476,6 +3492,7 @@ function doRestore() {
             localStorage.setItem('app_orgNextId', orgNextId);
           }
           migrateDataForOrgTree();
+    repairRecordUserNames();
           // 刷新 currentUser 引用（防止引用失效）
           const freshUser = USERS.find(u => u.id === currentUser.id);
           if (freshUser) currentUser = freshUser;
@@ -3890,6 +3907,7 @@ async function initCloud() {
     }
   }
   migrateDataForOrgTree();
+  repairRecordUserNames();
   window._cloudDataReady = true;
   hideLoading();
 }
