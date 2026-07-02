@@ -1511,14 +1511,21 @@ async function cloudSave() {
               if (!localIds.has(u.id)) USERS.push(u);
             });
           }
-          // 合并记录：按 ID 去重，本地优先
+          // 合并记录：按 ID 去重，审批状态优先（approved/rejected 覆盖 pending）
           if (latest.records) {
-            const localRecIds = new Set(records.map(r => r.id));
+            const localRecMap = new Map(records.map(r => [r.id, r]));
             latest.records.forEach(r => {
-              if (!localRecIds.has(r.id)) {
-                if (typeof r.date === 'string') r.date = new Date(r.date);
-                if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+              if (typeof r.date === 'string') r.date = new Date(r.date);
+              if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+              const localR = localRecMap.get(r.id);
+              if (!localR) {
                 records.push(r);
+              } else {
+                // 审批状态优先：云端的 approved/rejected 覆盖本地的 pending
+                if (localR.status === 'pending' && r.status !== 'pending') {
+                  localR.status = r.status;
+                  if (r.rejectReason) localR.rejectReason = r.rejectReason;
+                }
               }
             });
           }
@@ -2760,7 +2767,8 @@ function renderMyRecords() {
   const isAdmin = currentUser && isAdminRole(currentUser.role);
   document.getElementById('my-records-title').textContent = isAdmin ? '全部人员记录' : '我的记录';
 
-  let list = records.filter(r => r.date.getFullYear() === myRecYear && r.date.getMonth() + 1 === myRecMonth);
+  const baseRecords = getTeamScopedRecords();
+  let list = baseRecords.filter(r => r.date.getFullYear() === myRecYear && r.date.getMonth() + 1 === myRecMonth);
   if (!isAdmin) list = list.filter(r => r.userId === currentUser.id);
   if (myRecFilter !== 'all') list = list.filter(r => r.status === myRecFilter);
   list.sort((a, b) => b.date - a.date);
@@ -2847,6 +2855,8 @@ function editRecord(id) {
     if (reverseMap[vals[3]]) r.status = reverseMap[vals[3]];
     showToast(`✅ 已修改「${r.userName}」的记录`);
     renderAllRecords();
+    renderHome();
+    cloudSaveDebounced();
   });
 }
 
@@ -2856,6 +2866,7 @@ function quickApprove(id) {
   r.status = 'approved';
   showToast(`✅ 已通过「${r.userName}」的申报`);
   renderAllRecords();
+  renderApproval();
   renderHome(); // 刷新首页统计
   cloudSaveDebounced();
 }
