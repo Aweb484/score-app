@@ -975,7 +975,7 @@
       <div class="menu-list">
         <div class="menu-item">
           <div class="menu-icon">ℹ️</div>
-          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.2</div></div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.3</div></div>
           <span class="menu-arrow">›</span>
         </div>
       </div>
@@ -1267,10 +1267,10 @@
 
 <script>
 // ===== 版本管理 =====
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.5.3';
 const VERSION_KEY = 'app_html_version';
 // HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
-// HTML_VERSION_CHECK:1.5.2
+// HTML_VERSION_CHECK:1.5.3
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -1912,15 +1912,28 @@ function repairRecordUserNames() {
   records.forEach(r => {
     const user = USERS.find(u => u.id === r.userId);
     if (user) {
-      if (r.userName !== user.name) {
-        r.userName = user.name;
-        repaired = true;
-      }
+      // userId 有效，同步姓名和工号
+      if (r.userName !== user.name) { r.userName = user.name; repaired = true; }
+      if (r.userAccount !== user.account) { r.userAccount = user.account; repaired = true; }
     } else {
-      // userId 指向已删除的用户，尝试通过 userName 重新关联
-      const matchByName = USERS.find(u => u.name === r.userName);
-      if (matchByName) {
-        r.userId = matchByName.id;
+      // userId 指向已删除的用户，通过工号+姓名双重匹配重新关联
+      let matched = null;
+      // 优先级1：工号+姓名双重匹配（最准确）
+      if (r.userAccount && r.userName) {
+        matched = USERS.find(u => u.account === r.userAccount && u.name === r.userName);
+      }
+      // 优先级2：仅工号匹配（工号唯一）
+      if (!matched && r.userAccount) {
+        matched = USERS.find(u => u.account === r.userAccount);
+      }
+      // 优先级3：仅姓名匹配（兜底）
+      if (!matched && r.userName) {
+        matched = USERS.find(u => u.name === r.userName);
+      }
+      if (matched) {
+        r.userId = matched.id;
+        r.userName = matched.name;
+        r.userAccount = matched.account;
         repaired = true;
       }
     }
@@ -2566,7 +2579,7 @@ function submitScoreMulti() {
       if (task) {
         const actualScore = customScores[id] !== undefined ? customScores[id] : (isScoreRange(task.score) ? parseScoreRange(task.score).min : task.score);
         records.push({
-          id: nextId++, userId: currentUser.id, userName: currentUser.name,
+          id: nextId++, userId: currentUser.id, userName: currentUser.name, userAccount: currentUser.account,
           taskId: task.id, taskName: task.content,
           date: new Date(dateStr + 'T00:00:00'), count: 1, score: actualScore,
           status: 'pending', createdAt: new Date(),
