@@ -975,7 +975,7 @@
       <div class="menu-list">
         <div class="menu-item">
           <div class="menu-icon">ℹ️</div>
-          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.1</div></div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.2</div></div>
           <span class="menu-arrow">›</span>
         </div>
       </div>
@@ -1267,10 +1267,10 @@
 
 <script>
 // ===== 版本管理 =====
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 const VERSION_KEY = 'app_html_version';
 // HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
-// HTML_VERSION_CHECK:1.5.1
+// HTML_VERSION_CHECK:1.5.2
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -1911,9 +1911,18 @@ function repairRecordUserNames() {
   let repaired = false;
   records.forEach(r => {
     const user = USERS.find(u => u.id === r.userId);
-    if (user && r.userName !== user.name) {
-      r.userName = user.name;
-      repaired = true;
+    if (user) {
+      if (r.userName !== user.name) {
+        r.userName = user.name;
+        repaired = true;
+      }
+    } else {
+      // userId 指向已删除的用户，尝试通过 userName 重新关联
+      const matchByName = USERS.find(u => u.name === r.userName);
+      if (matchByName) {
+        r.userId = matchByName.id;
+        repaired = true;
+      }
     }
   });
   if (repaired) localSaveRecords();
