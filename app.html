@@ -988,7 +988,7 @@
       <div class="menu-list">
         <div class="menu-item">
           <div class="menu-icon">ℹ️</div>
-          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.6</div></div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.7</div></div>
           <span class="menu-arrow">›</span>
         </div>
       </div>
@@ -1280,10 +1280,10 @@
 
 <script>
 // ===== 版本管理 =====
-const APP_VERSION = '1.5.6';
+const APP_VERSION = '1.5.7';
 const VERSION_KEY = 'app_html_version';
 // HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
-// HTML_VERSION_CHECK:1.5.6
+// HTML_VERSION_CHECK:1.5.7
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -2400,8 +2400,9 @@ function _doLoginAuth(account, pwd) {
   showLoading('正在登录...');
 
   setTimeout(() => {
-    // 统一登录验证：支持账号或姓名登录
-    const user = USERS.find(u => (u.name === account || u.account === account));
+    // 优先按账号精确匹配，再按姓名匹配（防止跨班组同名用户误匹配）
+    let user = USERS.find(u => u.account === account);
+    if (!user) user = USERS.find(u => u.name === account);
     if (user) {
       if (userDisabled.has(user.id)) {
         hideLoading();
@@ -2419,6 +2420,19 @@ function _doLoginAuth(account, pwd) {
         hideLoading();
         showToast('❌ 密码错误');
         return;
+      }
+      // 组织架构校验：确认用户所属班组在组织架构中存在且有效
+      if (ORG_TREE.length > 0 && user.teamId) {
+        const teamNode = ORG_TREE.find(n => n.id === user.teamId);
+        if (!teamNode) {
+          console.warn('用户 ' + user.name + ' 的班组ID(' + user.teamId + ')在组织架构中不存在，尝试修复...');
+          // 尝试将用户分配到默认班组
+          const defaultTeam = ORG_TREE.find(n => n.level === 4) || ORG_TREE[ORG_TREE.length - 1];
+          if (defaultTeam) {
+            user.teamId = defaultTeam.id;
+            console.log('已将 ' + user.name + ' 分配到默认班组: ' + defaultTeam.name);
+          }
+        }
       }
       currentUser = user;
       if (rememberPwd) {
@@ -2505,9 +2519,14 @@ function renderHome() {
   document.getElementById('home-approval-badge').style.display = canApprove ? '' : 'none';
   document.getElementById('home-pending').closest('.score-card').style.display = canApprove ? '' : 'none';
 
-  // Month score - 按当前月份过滤
+  // 构建当前班组成员ID集合（双重过滤安全网）
+  const teamMemberIds = new Set(
+    USERS.filter(u => u.teamId && isTeamSameOrDescendant(currentUser.teamId, u.teamId)).map(u => u.id)
+  );
+
+  // Month score - 双重过滤：userId + 班组隔离
   const curMonth = now.getFullYear() + '-' + now.getMonth();
-  const myApproved = records.filter(r => r.userId === currentUser.id && r.status === 'approved'
+  const myApproved = records.filter(r => r.userId === currentUser.id && teamMemberIds.has(r.userId) && r.status === 'approved'
     && r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth());
   const monthScore = myApproved.reduce((s,r) => s + r.score, 0);
   document.getElementById('home-month-score').textContent = monthScore;
@@ -2539,10 +2558,11 @@ function renderHome() {
     rankList.style.display = 'none';
   }
 
-  // Records - 管理员看全部，员工只看自己，按当前月份过滤
+  // Records - 双重过滤安全网：userId + 组织架构班组隔离
   const isAdmin = canViewRanking;
   const myRecords = records.filter(r =>
     r.userId === currentUser.id
+    && teamMemberIds.has(r.userId)
     && r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth()
   ).sort((a,b) => b.date - a.date).slice(0,5);
   document.getElementById('home-records').innerHTML = myRecords.map(r => {
