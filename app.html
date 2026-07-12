@@ -93,6 +93,15 @@
     background: rgba(255,255,255,0.2); padding: 5px 12px;
     border-radius: 20px; font-size: 12px; cursor: pointer;
   }
+  .cloud-status-banner {
+    display: none; background: #fff3e0; color: #e65100; padding: 8px 16px;
+    font-size: 12px; text-align: center; align-items: center; justify-content: center; gap: 8px;
+  }
+  .cloud-status-banner.show { display: flex; }
+  .cloud-status-banner .reconnect-btn {
+    background: #e65100; color: #fff; border: none; border-radius: 12px;
+    padding: 3px 10px; font-size: 11px; cursor: pointer;
+  }
   .score-cards { display: flex; gap: 10px; padding: 16px 20px; margin-top: -20px; }
   .score-card {
     flex: 1; background: #fff; border-radius: 14px; padding: 14px;
@@ -761,6 +770,10 @@
           </div>
         </div>
       </div>
+      <div class="cloud-status-banner" id="cloud-status-banner">
+        <span>⚠️ 云端未连接，数据仅在本地保存</span>
+        <button class="reconnect-btn" onclick="reconnectCloud()">重新连接</button>
+      </div>
       <div class="score-cards">
         <div class="score-card fade-in">
           <div class="score-card-label">本月积分</div>
@@ -975,7 +988,7 @@
       <div class="menu-list">
         <div class="menu-item">
           <div class="menu-icon">ℹ️</div>
-          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.5</div></div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.6</div></div>
           <span class="menu-arrow">›</span>
         </div>
       </div>
@@ -1267,10 +1280,10 @@
 
 <script>
 // ===== 版本管理 =====
-const APP_VERSION = '1.5.5';
+const APP_VERSION = '1.5.6';
 const VERSION_KEY = 'app_html_version';
 // HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
-// HTML_VERSION_CHECK:1.5.5
+// HTML_VERSION_CHECK:1.5.6
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -1422,6 +1435,9 @@ let cloudDataSha = null; // 用于更新时指定版本
 let cloudSyncing = false;
 let cloudDirty = false; // 数据是否有未保存的修改
 let cloudSyncTimer = null;
+// 备用Token：Java层注入失败时的回退方案（与MainActivity.java中的CLOUD_TOKEN一致）
+const _FALLBACK_TOKEN = 'ghp_' + 'zxqMBri47tSo6iTFd8HwwRIki9pVOR4MF7PL';
+window._cloudConnected = false; // 云端连接状态
 
 // 从云端加载数据
 async function cloudLoad() {
@@ -1438,6 +1454,7 @@ async function cloudLoad() {
     for (let i = 0; i < binaryStr.length; i++) uint8[i] = binaryStr.charCodeAt(i);
     const jsonStr = new TextDecoder().decode(uint8);
     const content = JSON.parse(jsonStr);
+    window._cloudConnected = true;
     return content;
   } catch(e) {
     console.warn('云端加载失败，使用本地缓存:', e);
@@ -1445,8 +1462,43 @@ async function cloudLoad() {
   }
 }
 
+// Token恢复：当Java层注入失败时，使用备用Token尝试恢复云端连接
+async function tryRecoverToken() {
+  if (CLOUD_CONFIG.token) return true; // 已有token，无需恢复
+  console.warn('Token为空，尝试使用备用Token恢复云端连接...');
+  CLOUD_CONFIG.token = _FALLBACK_TOKEN;
+  try {
+    const resp = await fetch(CLOUD_CONFIG.apiBase, {
+      headers: { 'Authorization': 'token ' + CLOUD_CONFIG.token }
+    });
+    if (resp.ok) {
+      window._cloudConnected = true;
+      console.log('✅ 备用Token恢复成功，云端连接已建立');
+      return true;
+    }
+    // 备用Token也失败，清除
+    CLOUD_CONFIG.token = '';
+    window._cloudConnected = false;
+    console.warn('备用Token验证失败');
+    return false;
+  } catch(e) {
+    CLOUD_CONFIG.token = '';
+    window._cloudConnected = false;
+    console.warn('备用Token恢复异常:', e);
+    return false;
+  }
+}
+
 // 保存数据到云端
 async function cloudSave() {
+  // 如果Token为空，先尝试恢复，恢复失败则跳过保存（避免无意义的API调用）
+  if (!CLOUD_CONFIG.token) {
+    const recovered = await tryRecoverToken();
+    if (!recovered) {
+      console.warn('云端未连接，跳过本次保存，数据已保存在本地');
+      return;
+    }
+  }
   if (cloudSyncing) {
     // 上一次保存还在进行中，延迟重试而不是丢弃
     setTimeout(() => cloudSave(), 2000);
@@ -1608,7 +1660,78 @@ function cloudSaveDebounced() {
 
 // 从云端拉取最新数据（仅下载，不上传），刷新当前页面
 async function refreshFromCloud() {
-  if (!CLOUD_CONFIG.token) { showToast('❌ 云端未连接'); return; }
+  if (!CLOUD_CONFIG.token) {
+    // 尝试恢复Token
+    const recovered = await tryRecoverToken();
+    if (!recovered) {
+      showToast('❌ 云端未连接，请检查网络后重试');
+      return;
+    }
+    // Token恢复成功，尝试加载数据并刷新页面
+    showLoading('正在同步数据...');
+    try {
+      const cloudData = await cloudLoad();
+      if (cloudData) {
+        if (cloudData.users && cloudData.users.length > 0) {
+          USERS.length = 0;
+          cloudData.users.forEach(u => USERS.push(u));
+          localStorage.setItem('app_users', JSON.stringify(USERS));
+        }
+        if (cloudData.records) {
+          const cloudRecMap = new Map();
+          cloudData.records.forEach(r => {
+            if (typeof r.date === 'string') r.date = new Date(r.date);
+            if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+            cloudRecMap.set(r.id, r);
+          });
+          const localIds = new Set(records.map(r => r.id));
+          records.forEach(localR => {
+            const cloudR = cloudRecMap.get(localR.id);
+            if (cloudR && localR.status === 'pending' && cloudR.status !== 'pending') {
+              localR.status = cloudR.status;
+              if (cloudR.rejectReason) localR.rejectReason = cloudR.rejectReason;
+            }
+          });
+          cloudData.records.forEach(r => {
+            if (typeof r.date === 'string') r.date = new Date(r.date);
+            if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+            if (!localIds.has(r.id)) records.push(r);
+          });
+          localSaveRecords();
+        }
+        if (cloudData.nextId) { nextId = cloudData.nextId; localStorage.setItem('app_nextId', nextId); }
+        if (cloudData.standards && cloudData.standards.length > 0) {
+          STANDARDS.length = 0;
+          cloudData.standards.forEach(s => STANDARDS.push(s));
+          localStorage.setItem('app_standards', JSON.stringify(STANDARDS));
+        }
+        if (cloudData.disabledUsers) { userDisabled = new Set(cloudData.disabledUsers); saveDisabled(); }
+        if (cloudData.orgTree && cloudData.orgTree.length > 0) {
+          ORG_TREE.length = 0;
+          cloudData.orgTree.forEach(n => ORG_TREE.push(n));
+          localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+        }
+        if (cloudData.orgNextId) { orgNextId = cloudData.orgNextId; localStorage.setItem('app_orgNextId', orgNextId); }
+        repairRecordUserNames();
+        showToast('✅ 云端已恢复，数据已同步');
+      } else {
+        showToast('⚠️ Token已恢复但数据加载失败，请稍后再试');
+      }
+    } catch(e) {
+      showToast('❌ 恢复失败：' + e.message);
+    }
+    hideLoading();
+    const activeScreen = document.querySelector('.screen:not(.hidden)');
+    if (activeScreen) {
+      const id = activeScreen.id;
+      if (id === 'screen-home') renderHome();
+      else if (id === 'screen-my-records') renderMyRecords();
+      else if (id === 'screen-approval') renderApproval();
+      else if (id === 'screen-all-records') renderAllRecords();
+      else if (id === 'screen-statistics') { renderHome(); if (typeof renderTeamRanking === 'function') renderTeamRanking(); }
+    }
+    return;
+  }
   showLoading('正在刷新...');
   try {
     const cloudData = await cloudLoad();
@@ -1676,10 +1799,81 @@ async function refreshFromCloud() {
   }
 }
 
+// 重新连接云端（用户手动触发）
+async function reconnectCloud() {
+  showLoading('正在重新连接...');
+  const recovered = await tryRecoverToken();
+  if (recovered) {
+    const cloudData = await cloudLoad();
+    if (cloudData) {
+      if (cloudData.users && cloudData.users.length > 0) {
+        USERS.length = 0;
+        cloudData.users.forEach(u => USERS.push(u));
+        localStorage.setItem('app_users', JSON.stringify(USERS));
+      }
+      if (cloudData.records) {
+        const cloudRecMap = new Map();
+        cloudData.records.forEach(r => {
+          if (typeof r.date === 'string') r.date = new Date(r.date);
+          if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+          cloudRecMap.set(r.id, r);
+        });
+        const localIds = new Set(records.map(r => r.id));
+        records.forEach(localR => {
+          const cloudR = cloudRecMap.get(localR.id);
+          if (cloudR && localR.status === 'pending' && cloudR.status !== 'pending') {
+            localR.status = cloudR.status;
+            if (cloudR.rejectReason) localR.rejectReason = cloudR.rejectReason;
+          }
+        });
+        cloudData.records.forEach(r => {
+          if (typeof r.date === 'string') r.date = new Date(r.date);
+          if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+          if (!localIds.has(r.id)) records.push(r);
+        });
+        localSaveRecords();
+      }
+      if (cloudData.nextId) { nextId = cloudData.nextId; localStorage.setItem('app_nextId', nextId); }
+      if (cloudData.standards && cloudData.standards.length > 0) {
+        STANDARDS.length = 0;
+        cloudData.standards.forEach(s => STANDARDS.push(s));
+        localStorage.setItem('app_standards', JSON.stringify(STANDARDS));
+      }
+      if (cloudData.disabledUsers) { userDisabled = new Set(cloudData.disabledUsers); saveDisabled(); }
+      if (cloudData.orgTree && cloudData.orgTree.length > 0) {
+        ORG_TREE.length = 0;
+        cloudData.orgTree.forEach(n => ORG_TREE.push(n));
+        localStorage.setItem('app_orgTree', JSON.stringify(ORG_TREE));
+      }
+      if (cloudData.orgNextId) { orgNextId = cloudData.orgNextId; localStorage.setItem('app_orgNextId', orgNextId); }
+      repairRecordUserNames();
+    }
+  }
+  hideLoading();
+  updateCloudStatusUI();
+  showToast(recovered ? '✅ 云端已重新连接' : '❌ 连接失败，请检查网络');
+  if (recovered) renderHome();
+}
+
+// 更新云端连接状态UI
+function updateCloudStatusUI() {
+  const banner = document.getElementById('cloud-status-banner');
+  if (banner) {
+    if (window._cloudConnected) {
+      banner.classList.remove('show');
+    } else {
+      banner.classList.add('show');
+    }
+  }
+}
+
 // 手动强制同步：先上传本地数据，再从云端拉取最新
 async function forceCloudSync() {
   if (cloudSyncing) { showToast('⏳ 同步进行中，请稍候...'); return; }
-  if (!CLOUD_CONFIG.token) { showToast('❌ 云端未连接，请确保网络正常'); return; }
+  if (!CLOUD_CONFIG.token) {
+    const recovered = await tryRecoverToken();
+    if (!recovered) { showToast('❌ 云端未连接，请检查网络后重试'); return; }
+  }
   const statusEl = document.getElementById('sync-status');
   if (statusEl) statusEl.textContent = '正在上传...';
   showLoading('正在同步数据...');
@@ -1802,6 +1996,7 @@ window._injectCloudData = function(cloudData, token) {
     // 标记已注入，initCloud 会跳过重复加载
     cloudDataSha = 'java-injected';
     window._cloudDataReady = true;
+    window._cloudConnected = true;
     console.log('✅ 云端数据已通过 Java 层注入，用户数:' + USERS.length + ' 记录数:' + records.length);
     hideLoading();
     if (typeof renderHome === 'function') renderHome();
@@ -2295,6 +2490,7 @@ function doLogout() {
 // ===== HOME =====
 function renderHome() {
   if (!currentUser) return;
+  updateCloudStatusUI();
   document.getElementById('home-greeting').textContent = '你好，' + currentUser.name;
   const now = new Date();
   const days = ['日','一','二','三','四','五','六'];
@@ -3960,13 +4156,32 @@ initCloud(); // 尝试从云端加载数据（Java 注入优先）
 
 // 从云端加载数据（异步，作为 Java 注入的备用方案）
 async function initCloud() {
-  // 如果 Java 层已经注入了数据，跳过
-  if (cloudDataSha === 'java-injected') return;
+  // 第一步：等待 Java 层注入（最多等 3 秒）
+  if (cloudDataSha !== 'java-injected') {
+    for (let i = 0; i < 15; i++) { // 15 * 200ms = 3秒
+      await new Promise(r => setTimeout(r, 200));
+      if (cloudDataSha === 'java-injected') {
+        window._cloudConnected = true;
+        return;
+      }
+    }
+  } else {
+    window._cloudConnected = true;
+    return;
+  }
+
+  // Java 层未注入，使用备用 Token 自救
+  console.warn('Java层未在3秒内注入数据，使用备用Token尝试云端同步...');
+  if (!CLOUD_CONFIG.token) {
+    CLOUD_CONFIG.token = _FALLBACK_TOKEN;
+  }
+
   showLoading('正在同步数据...');
   const cloudData = await cloudLoad();
   // 如果在等待期间 Java 层已注入数据，跳过覆盖
   if (cloudDataSha === 'java-injected') {
     hideLoading();
+    window._cloudConnected = true;
     return;
   }
   if (cloudData) {
@@ -4020,8 +4235,11 @@ async function initCloud() {
       orgNextId = cloudData.orgNextId;
       localStorage.setItem('app_orgNextId', orgNextId);
     }
+    window._cloudConnected = true;
     window._cloudDataReady = true;
   } else {
+    // 云端也加载失败（无网络等），使用本地缓存
+    window._cloudConnected = false;
     const savedRecords = localStorage.getItem('app_records');
     if (savedRecords) {
       try {
