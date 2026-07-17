@@ -988,7 +988,7 @@
       <div class="menu-list">
         <div class="menu-item">
           <div class="menu-icon">ℹ️</div>
-          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.7</div></div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.5.8</div></div>
           <span class="menu-arrow">›</span>
         </div>
       </div>
@@ -1280,10 +1280,10 @@
 
 <script>
 // ===== 版本管理 =====
-const APP_VERSION = '1.5.7';
+const APP_VERSION = '1.5.8';
 const VERSION_KEY = 'app_html_version';
 // HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
-// HTML_VERSION_CHECK:1.5.7
+// HTML_VERSION_CHECK:1.5.8
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -1575,7 +1575,13 @@ async function cloudSave() {
               if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
               const localR = localRecMap.get(r.id);
               if (!localR) {
-                records.push(r);
+                const dup = isSemanticDuplicate(r, records);
+                if (dup) {
+                  if (dup.status === 'pending' && r.status !== 'pending') {
+                    dup.status = r.status;
+                    if (r.rejectReason) dup.rejectReason = r.rejectReason;
+                  }
+                } else { records.push(r); }
               } else {
                 // 检查是否为同一条记录（通过 userId + taskId + 日期 判断）
                 const sameDate = localR.date instanceof Date && r.date instanceof Date
@@ -1590,12 +1596,20 @@ async function cloudSave() {
                     if (r.rejectReason) localR.rejectReason = r.rejectReason;
                   }
                 } else {
-                  // 不同记录但ID冲突：为云端记录分配新ID，避免覆盖
-                  const newId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
-                  r.id = newId;
-                  if (newId >= nextId) nextId = newId + 1;
-                  records.push(r);
-                  console.warn('ID冲突已解决: 原id=' + localR.id + ', 新id=' + newId);
+                  // 不同记录但ID冲突：检查语义去重后再分配新ID
+                  const dupCheck = isSemanticDuplicate(r, records);
+                  if (dupCheck) {
+                    if (dupCheck.status === 'pending' && r.status !== 'pending') {
+                      dupCheck.status = r.status;
+                      if (r.rejectReason) dupCheck.rejectReason = r.rejectReason;
+                    }
+                  } else {
+                    const newId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+                    r.id = newId;
+                    if (newId >= nextId) nextId = newId + 1;
+                    records.push(r);
+                    console.warn('ID冲突已解决: 原id=' + localR.id + ', 新id=' + newId);
+                  }
                 }
               }
             });
@@ -1651,6 +1665,24 @@ function localSaveRecords() {
   }
 }
 
+// 语义去重：检查本地是否已存在相同(userId+taskId+日期)的记录
+// 用于合并云端数据时，避免同一用户同一天同一任务出现多条重复待审批
+function isSemanticDuplicate(newRecord, localRecords) {
+  const newDateStr = newRecord.date instanceof Date
+    ? newRecord.date.toISOString().slice(0, 10)
+    : String(newRecord.date).slice(0, 10);
+  for (let i = 0; i < localRecords.length; i++) {
+    const r = localRecords[i];
+    if (r.id === newRecord.id) continue; // 同ID不算重复
+    if (r.userId !== newRecord.userId || r.taskId !== newRecord.taskId) continue;
+    const existDateStr = r.date instanceof Date
+      ? r.date.toISOString().slice(0, 10)
+      : String(r.date).slice(0, 10);
+    if (existDateStr === newDateStr) return r; // 返回已存在的记录
+  }
+  return null;
+}
+
 // 延迟保存（防抖，3秒内多次修改只保存一次）
 function cloudSaveDebounced() {
   cloudDirty = true;
@@ -1695,7 +1727,15 @@ async function refreshFromCloud() {
           cloudData.records.forEach(r => {
             if (typeof r.date === 'string') r.date = new Date(r.date);
             if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
-            if (!localIds.has(r.id)) records.push(r);
+            if (!localIds.has(r.id)) {
+            const dup = isSemanticDuplicate(r, records);
+            if (dup) {
+              if (dup.status === 'pending' && r.status !== 'pending') {
+                dup.status = r.status;
+                if (r.rejectReason) dup.rejectReason = r.rejectReason;
+              }
+            } else { records.push(r); }
+          }
           });
           localSaveRecords();
         }
@@ -1762,7 +1802,15 @@ async function refreshFromCloud() {
         cloudData.records.forEach(r => {
           if (typeof r.date === 'string') r.date = new Date(r.date);
           if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
-          if (!localIds.has(r.id)) records.push(r);
+          if (!localIds.has(r.id)) {
+            const dup = isSemanticDuplicate(r, records);
+            if (dup) {
+              if (dup.status === 'pending' && r.status !== 'pending') {
+                dup.status = r.status;
+                if (r.rejectReason) dup.rejectReason = r.rejectReason;
+              }
+            } else { records.push(r); }
+          }
         });
         localSaveRecords();
       }
@@ -1829,7 +1877,15 @@ async function reconnectCloud() {
         cloudData.records.forEach(r => {
           if (typeof r.date === 'string') r.date = new Date(r.date);
           if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
-          if (!localIds.has(r.id)) records.push(r);
+          if (!localIds.has(r.id)) {
+            const dup = isSemanticDuplicate(r, records);
+            if (dup) {
+              if (dup.status === 'pending' && r.status !== 'pending') {
+                dup.status = r.status;
+                if (r.rejectReason) dup.rejectReason = r.rejectReason;
+              }
+            } else { records.push(r); }
+          }
         });
         localSaveRecords();
       }
@@ -1891,11 +1947,35 @@ async function forceCloudSync() {
         localStorage.setItem('app_users', JSON.stringify(USERS));
       }
       if (cloudData.records) {
-        records.length = 0;
+        // 智能合并：保留本地审批状态，合并云端数据，语义去重
+        const cloudRecMap = new Map();
         cloudData.records.forEach(r => {
           if (typeof r.date === 'string') r.date = new Date(r.date);
           if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
-          records.push(r);
+          cloudRecMap.set(r.id, r);
+        });
+        // 更新本地已有记录的审批状态
+        records.forEach(localR => {
+          const cloudR = cloudRecMap.get(localR.id);
+          if (cloudR && localR.status === 'pending' && cloudR.status !== 'pending') {
+            localR.status = cloudR.status;
+            if (cloudR.rejectReason) localR.rejectReason = cloudR.rejectReason;
+          }
+        });
+        // 添加云端独有记录（语义去重）
+        const localIds = new Set(records.map(r => r.id));
+        cloudData.records.forEach(r => {
+          if (typeof r.date === 'string') r.date = new Date(r.date);
+          if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
+          if (!localIds.has(r.id)) {
+            const dup = isSemanticDuplicate(r, records);
+            if (dup) {
+              if (dup.status === 'pending' && r.status !== 'pending') {
+                dup.status = r.status;
+                if (r.rejectReason) dup.rejectReason = r.rejectReason;
+              }
+            } else { records.push(r); }
+          }
         });
         localSaveRecords();
       }
@@ -1965,7 +2045,15 @@ window._injectCloudData = function(cloudData, token) {
       cloudData.records.forEach(r => {
         if (typeof r.date === 'string') r.date = new Date(r.date);
         if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
-        if (!localIds.has(r.id)) records.push(r);
+        if (!localIds.has(r.id)) {
+            const dup = isSemanticDuplicate(r, records);
+            if (dup) {
+              if (dup.status === 'pending' && r.status !== 'pending') {
+                dup.status = r.status;
+                if (r.rejectReason) dup.rejectReason = r.rejectReason;
+              }
+            } else { records.push(r); }
+          }
       });
       localSaveRecords();
     }
@@ -2917,7 +3005,7 @@ function switchApprovalTab(idx, el) {
 
 function approveRecord(id) {
   const r = records.find(r => r.id === id);
-  if (r) { r.status = 'approved'; renderApproval(); renderHome(); showToast('✅ 已通过'); cloudSaveDebounced(); }
+  if (r) { r.status = 'approved'; renderApproval(); renderHome(); showToast('✅ 已通过'); cloudSave(); }
 }
 
 function rejectRecord(id) {
@@ -2930,7 +3018,7 @@ function rejectRecord(id) {
     r.rejectReason = vals[0] || '不符合要求';
     renderApproval(); renderHome();
     showToast('❌ 已驳回：' + r.userName + ' - ' + r.taskName);
-    cloudSaveDebounced();
+    cloudSave();
   });
 }
 
@@ -3273,7 +3361,7 @@ function quickApprove(id) {
   renderAllRecords();
   renderApproval();
   renderHome(); // 刷新首页统计
-  cloudSaveDebounced();
+  cloudSave();
 }
 
 // ===== PROFILE =====
@@ -4229,7 +4317,15 @@ async function initCloud() {
       cloudData.records.forEach(r => {
         if (typeof r.date === 'string') r.date = new Date(r.date);
         if (typeof r.createdAt === 'string') r.createdAt = new Date(r.createdAt);
-        if (!localIds.has(r.id)) records.push(r);
+        if (!localIds.has(r.id)) {
+            const dup = isSemanticDuplicate(r, records);
+            if (dup) {
+              if (dup.status === 'pending' && r.status !== 'pending') {
+                dup.status = r.status;
+                if (r.rejectReason) dup.rejectReason = r.rejectReason;
+              }
+            } else { records.push(r); }
+          }
       });
       localSaveRecords();
     }
