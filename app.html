@@ -988,7 +988,7 @@
       <div class="menu-list">
         <div class="menu-item">
           <div class="menu-icon">ℹ️</div>
-          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.6.0</div></div>
+          <div class="menu-text"><div class="menu-title">关于</div><div class="menu-subtitle">计件积分管理 v1.6.1</div></div>
           <span class="menu-arrow">›</span>
         </div>
       </div>
@@ -1280,10 +1280,10 @@
 
 <script>
 // ===== 版本管理 =====
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 const VERSION_KEY = 'app_html_version';
 // HTML_VERSION_CHECK 标记，供 APP Java 层校验 HTML 是否为最新版
-// HTML_VERSION_CHECK:1.6.0
+// HTML_VERSION_CHECK:1.6.1
 
 function checkVersionUpdate() {
   const lastVersion = localStorage.getItem(VERSION_KEY);
@@ -1424,7 +1424,7 @@ const DEFAULT_USERS = [
   {id:100,name:'管理员',role:'admin',pwd:'6012524',account:'6012524',teamId:4},
 ];
 
-// ===== GitHub 云端数据同步（分片架构 v1.6.0）=====
+// ===== GitHub 云端数据同步（分片架构 v1.6.1）=====
 const CLOUD_CONFIG = {
   repo: 'Aweb484/score-app-data',
   token: '', // 由 Java 层注入
@@ -2497,7 +2497,35 @@ function _doLoginAuth(account, pwd) {
         return;
       }
       showToast('✅ 登录成功，欢迎 ' + currentUser.name);
-      setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+      // 管理员登录后加载所有用户的记录，普通员工加载自己的记录（分片架构）
+      if (CLOUD_CONFIG.token) {
+        showLoading('正在加载数据...');
+        if (isAdminRole(currentUser.role)) {
+          cloudLoadAllRecords().then(allFiles => {
+            mergeCloudRecordsToMemory(allFiles);
+            localSaveRecords();
+            hideLoading();
+            setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+          }).catch(e => {
+            console.warn('加载全部用户记录失败:', e);
+            hideLoading();
+            setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+          });
+        } else {
+          cloudLoadUserFile(String(currentUser.account)).then(uf => {
+            mergeCloudRecordsToMemory([uf]);
+            localSaveRecords();
+            hideLoading();
+            setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+          }).catch(e => {
+            console.warn('加载用户记录失败:', e);
+            hideLoading();
+            setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+          });
+        }
+      } else {
+        setTimeout(() => { navStack = ['home']; navDirection = 'forward'; showScreen('home'); renderHome(); }, 300);
+      }
       return;
     }
 
